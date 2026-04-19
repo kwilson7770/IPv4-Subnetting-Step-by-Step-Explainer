@@ -122,7 +122,7 @@ class IPv4Address:
         self.broadcastStr = self.ipStr
         self.broadcastBin = self.ipBin
 
-        self.totalHosts = 1
+        self.totalAddresses = 1
         self.usableHosts = 1
         self.firstHost = self.ipStr
         self.lastHost = self.ipStr
@@ -136,7 +136,7 @@ class IPv4Address:
         # sets the broadcast address to be the last IP address in a network
         self._set_broadcast_address()
 
-        self.totalHosts = 2
+        self.totalAddresses = 2
         self.usableHosts = 2
         self.firstHost = self.netIDStr
         self.lastHost = self.broadcastStr
@@ -150,9 +150,9 @@ class IPv4Address:
         # sets the broadcast address to be the last IP address in a network
         self._set_broadcast_address()
 
-        # The total hosts is the number of hosts that can fit within the host bits (hence the 2^host-bits math)
-        self.totalHosts = 2 ** (32 - self.prefixLen)
-        self.usableHosts = self.totalHosts - 2 # this is true for /1 to /30
+        # The total addresses is the number of hosts that can fit within the host bits (hence the 2^host-bits math)
+        self.totalAddresses = 2 ** (32 - self.prefixLen)
+        self.usableHosts = self.totalAddresses - 2 # this is true for /1 to /30
         self.firstHost = IPv4Address.ip_string_from_int(self.netIDInt + 1) # this is the first address after the network ID
         self.lastHost = IPv4Address.ip_string_from_int(self.broadcastInt - 1) #  this is the first address before the broadcast address
 
@@ -293,22 +293,27 @@ class IPv4Address:
         if self.ipInt & 0x80000000 == 0: # First bit is set to 0
             # 00000000 00000000 00000000 00000000 = 0.0.0.0
             # 01111111 11111111 11111111 11111111 = 127.255.255.255
+            self.adrClassStr = "Class A"
             return "A"
         elif self.ipInt & 0xC0000000 == 0x80000000: # First two bits are 10
             # 10000000 00000000 00000000 00000000 = 128.0.0.0
             # 10111111 11111111 11111111 11111111 = 191.255.255.255
+            self.adrClassStr = "Class B"
             return "B"
         elif self.ipInt & 0xE0000000 == 0xC0000000: # First three bits are 110
             # 11000000 00000000 00000000 00000000 = 192.0.0.0
             # 11011111 11111111 11111111 11111111 = 223.255.255.255
+            self.adrClassStr = "Class C"
             return "C"
         elif self.ipInt & 0xF0000000 == 0xE0000000: # First four bits are 1110
             # 11100000 00000000 00000000 00000000 = 224.0.0.0
             # 11101111 11111111 11111111 11111111 = 239.255.255.255
+            self.adrClassStr = "Class D (Multicast)"
             return "D"
         else: # First four bits are 1111
             # 11110000 00000000 00000000 00000000 = 240.0.0.0
             # 11111111 11111111 11111111 11111111 = 255.255.255.255
+            self.adrClassStr = "Class E (Reserved / Experimental)"
             return "E"
 
     def contains(self, ip):
@@ -374,10 +379,10 @@ Prefix Length: {self.prefixLen}
 Network ID:        {self.netIDStr}
 Broadcast Address: {self.broadcastStr}
 
-First Host:   {self.firstHost}
-Last Host:    {self.lastHost}
-Total Hosts:  {self.totalHosts:,d}
-Usable Hosts: {self.usableHosts:,d}
+First Host:      {self.firstHost}
+Last Host:       {self.lastHost}
+Total Addresses: {self.totalAddresses:,d}
+Usable Hosts:    {self.usableHosts:,d}
 
 Host (CIDR):    {self.cidrAdr}
 Network (CIDR): {self.netIDCIDR}
@@ -387,7 +392,7 @@ Binary (Subnet Mask):       {self.netmaskBin}
 Binary (Network ID):        {self.netIDBin}
 Binary (Broadcast Address): {self.broadcastBin}
 
-Address Class (Historical):                       {self.adrClass}
+Address Class (Historical):                       {self.adrClassStr}
 Private Address, Non-Publicly Routable (RFC1918): {self.privateUse}
 Link-Local Address, Non-Routable (RFC3927):       {self.linkLocal}
 Multicast:                                        {self.multicast}
@@ -463,14 +468,14 @@ Broadcast:   {self.broadcastBin}
              -----------------------------------
 Last Host:   {IPv4Address._space_out_binary_string(format(self.broadcastInt - 1, '032b'))}
 
-Total Hosts
- Broadcast:   {self.broadcastBin}
-Network ID: - {self.netIDBin}
-              -----------------------------------
-              {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt, '032b'))}
-     Add 1: + 00000000 00000000 00000000 00000001
-              -----------------------------------
-Total Hosts:  {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))}
+Total Addresses
+      Broadcast:   {self.broadcastBin}
+     Network ID: - {self.netIDBin}
+                   -----------------------------------
+                   {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt, '032b'))}
+          Add 1: + 00000000 00000000 00000000 00000001
+                   -----------------------------------
+Total Addresses:  {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))}
 
 IP Address
 {self.ipStr}
@@ -490,11 +495,11 @@ First Host
 Last Host
 {IPv4Address._space_out_binary_string(format(self.broadcastInt - 1, '032b'))} -> {self.lastHost}
 
-Total Hosts
-{IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))} -> {self.totalHosts}
+Total Addresses
+{IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))} -> {self.totalAddresses}
 
 Usable Hosts
-{self.totalHosts} - 2 = {self.usableHosts}""")
+{self.totalAddresses} - 2 = {self.usableHosts}""")
 
     def _print_block_size_steps(self):
         blockSize = 2**(8 - self.prefixLen % 8)
@@ -519,11 +524,11 @@ First Host
 Last Host
 {self.broadcastStr} - 1 = {self.lastHost}
 
-Total Hosts
-{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen)} total hosts
+Total Addresses
+{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen)} total addresses
 
 Usable Hosts
-{self.totalHosts} - 2 = {self.usableHosts}
+{self.totalAddresses} - 2 = {self.usableHosts}
 """)
             return
 
@@ -546,11 +551,11 @@ First Host
 Last Host
 {self.broadcastStr} - 1 = {self.lastHost}
 
-Total Hosts
-{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen)} total hosts
+Total Addresses
+{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen)} total addresses
 
 Usable Hosts
-{self.totalHosts} - 2 = {self.usableHosts}
+{self.totalAddresses} - 2 = {self.usableHosts}
 """)
 
     def _explain_how_to_calculate(self):
@@ -626,7 +631,7 @@ Both methods will be gone through step-by-step so you can see how they work and 
         # Step 5: First and Last Usable Hosts
         self._show_first_last_host_calc()
 
-        # Step 6: Total Hosts and Total Usable Hosts
+        # Step 6: Total Addresses and Total Usable Hosts
         self._show_calc_total_hosts()
 
         # Step 7: Convert binary addresses to dotted-decimal notation
@@ -807,10 +812,10 @@ Last Host:   {IPv4Address._space_out_binary_string(format(self.broadcastInt - 1,
         assert IPv4Address.ip_string_from_int(self.broadcastInt - 1) == self.lastHost
 
     def _show_calc_total_hosts(self):
-        print("\nStep 6: Calculate the total hosts available and total usable hosts.")
+        print("\nStep 6: Calculate the total addresses available and total usable hosts.")
 
         print(f"""
-There are two methods to get the total hosts available:
+There are two methods to get the total addresses available:
 1. Take the broadcast and subtract the network ID, then add 1. Then convert to decimal.
 2. Raise 2 to the the host bits power.""")
 
@@ -833,21 +838,21 @@ Network ID: - {self.netIDBin}
               {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))}""")
 
         # Check my "work" with an assertion (the class uses a simpler calculation method that should have zero errors)
-        assert self.broadcastInt - self.netIDInt + 1 == self.totalHosts
+        assert self.broadcastInt - self.netIDInt + 1 == self.totalAddresses
 
-        usableHosts = 1 if self.prefixLen == 32 else 2 if self.prefixLen == 31 else self.totalHosts - 2
+        usableHosts = 1 if self.prefixLen == 32 else 2 if self.prefixLen == 31 else self.totalAddresses - 2
         assert usableHosts == self.usableHosts
 
-        # Convert binary number to decimal to get total hosts
+        # Convert binary number to decimal to get total addresses
         self._show_binary_to_decimal()
 
-        print(f"""Knowing the current total hosts, calculating the usable hosts is as simple as total hosts - 2. The minus 2 comes from not being able to use the network ID and not being able to use the broadcast. The two exceptions are a 255.255.255.254 (/31) subnet or 255.255.255.255 (/32) subnet. For both of these, the total usable hosts are the same as the total hosts (no minus 2).
+        print(f"""Knowing the total number of addresses, calculating the usable hosts is as simple as total addresses - 2. The minus 2 comes from not being able to use the network ID and not being able to use the broadcast. The two exceptions are a 255.255.255.254 (/31) subnet or 255.255.255.255 (/32) subnet. For both of these, the total usable hosts are the same as the total addresses (no minus 2).
 
-For {self.cidrAdr}, the {self.totalHosts:,d} total hosts - 2 = {self.totalHosts - 2:,d} usable hosts.""")
+For {self.cidrAdr}, the {self.totalAddresses:,d} total addresses - 2 = {self.totalAddresses - 2:,d} usable hosts.""")
 
         # Check my "work" with an assertion (the class uses a simpler calculation method that should have zero errors)
         if self.prefixLen < 31:
-            assert self.totalHosts - 2 == self.usableHosts
+            assert self.totalAddresses - 2 == self.usableHosts
         else:
             assert self.usableHosts in (1, 2)
 
@@ -857,7 +862,7 @@ Next, convert it to decimal (base 10). The rules of this conversion is slightly 
 1. Add Powers of 2
 2. Multiply By 2 and Add""")
 
-        binStr = format(self.totalHosts, "032b")
+        binStr = format(self.totalAddresses, "032b")
 
         # Method 1: Add Powers of 2
         self._show_method_add_powers_of_2(binStr)
@@ -869,13 +874,13 @@ Next, convert it to decimal (base 10). The rules of this conversion is slightly 
         print(f"""
 Method 1: Add Powers of 2
 
-This is essentially the reverse of method 1 for converting decimal to binary, this should be familiar. The big difference is that the total hosts could be 2,147,483,648 if the prefix length was 1. As such, you will need a much bigger base 10 equivalent for the powers of 2 if you have a small prefix. Here is a cheat sheet:
+This is essentially the reverse of method 1 for converting decimal to binary, this should be familiar. The big difference is that the total addresses could be 2,147,483,648 if the prefix length was 1. As such, you will need a much bigger base 10 equivalent for the powers of 2 if you have a small prefix. Here is a cheat sheet:
 
 /1          /2          /3         /4         /5         /6        /7        /8        /9       /10      /11      /12      /13     /14     /15     /16    /17    /18    /19   /20   /21   /22   /23  /24  /25  /26  /27  /28  /29  /30  /31  /32
 2^31        2^30        2^29       2^28       2^27       2^26      2^25      2^24      2^23     2^22     2^21     2^20     2^19    2^18    2^17    2^16   2^15   2^14   2^13  2^12  2^11  2^10  2^9  2^8  2^7  2^6  2^5  2^4  2^3  2^2  2^1  2^0
 2147483648  1073741824  536870912  268435456  134217728  67108864  33554432  16777216  8388608  4194304  2097152  1048576  524288  262144  131072  65536  32768  16384  8192  4096  2048  1024  512  256  128  64   32   16   8    4    2    1
 
-To start, add the base 10 value associated with the power of 2 wherever the binary digit is 1 and skip adding the value when the binary digit is 0. Given the total hosts value in binary is:
+To start, add the base 10 value associated with the power of 2 wherever the binary digit is 1 and skip adding the value when the binary digit is 0. Given the total addresses value in binary is:
 {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))}
 if you decided to include all of the zeros when following these steps, it would turn into this mess:""")
 
@@ -912,7 +917,7 @@ However, if you only wrote down a number to add when the value is 1, it would be
 Which simplifies too:
 {toPrint2.rstrip(' +')} = {num2}""")
 
-        assert num == num2 and num == self.totalHosts
+        assert num == num2 and num == self.totalAddresses
 
     def _method_host_bits_exponent_total_hosts(self):
         print(f"""
@@ -927,12 +932,12 @@ The other method involves subtracting the CIDR address ({self.cidrAdr}) prefix l
 32 - {self.prefixLen} = {32 - self.prefixLen}
 host bits = {32 - self.prefixLen}
 
-Now raise 2 to the power of {32 - self.prefixLen} (# of host bits) to get the total hosts:
+Now raise 2 to the power of {32 - self.prefixLen} (# of host bits) to get the total addresses:
 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen):,d}
 
 If desired, you can estimate the total number of hosts using the number of host bits:
 
-Total hosts = 2^{32 - self.prefixLen}
+Total addresses = 2^{32 - self.prefixLen}
 
 Break the exponent into groups of 10. Since 2^10 approximately equals 1000, this simplifies the math for estimating by hand.
 
@@ -942,7 +947,7 @@ Rewrite the exponent as:
 
 Replace each 2^10 with 1000, solve the remaining exponents, and multiply.
 
-{'1000 * ' * ((32 - self.prefixLen) // 10)}{2**((32 - self.prefixLen) % 10)} = {1000**((32 - self.prefixLen) // 10) * 2**((32 - self.prefixLen) % 10):,d} total hosts
+{'1000 * ' * ((32 - self.prefixLen) // 10)}{2**((32 - self.prefixLen) % 10)} = {1000**((32 - self.prefixLen) // 10) * 2**((32 - self.prefixLen) % 10):,d} total addresses
 
 This gives a quick estimate that is slightly lower than the exact value but much easier to calculate.
 
@@ -963,7 +968,7 @@ Start at left-most digit, set total to 0, plug in values, and solve:
 total * 2 + value of current digit (a 1 or 0) = new total.
 Move right 1 digit and repeat.
 
-To save time and skip adding and multiplying by 0, find the left-most 1 digit in the binary number. This 1 digit will be the starting total for the total hosts since 0 (previous total) * 2 + 1 (current digit) = 1.
+To save time and skip adding and multiplying by 0, find the left-most 1 digit in the binary number. This 1 digit will be the starting total for the total addresses since 0 (previous total) * 2 + 1 (current digit) = 1.
 
 {binStr}
 {' ' * oneIndex}^
@@ -984,7 +989,7 @@ Here is the rest of the process:
             num = num * 2 + int(binStr[index])
 
         # Check my "work" with an assertion (the class uses a simpler calculation method that should have zero errors)
-        assert num == self.totalHosts
+        assert num == self.totalAddresses
 
     def _show_binary_to_dotted_decimal_notation(self):
         print(f"""
@@ -999,7 +1004,7 @@ Broadcast ID: {self.broadcastBin}
 
 Once again, you will need the base-10 equivalents for the powers of 2. Fortunately, since dotted-decimal notation only allows a maximum value of 255 per octet, you only need 8 bits, making this a reasonable and common approach for converting by hand.
 
-Note: While you can use the multiply-by-2-and-add-current-digit process demonstrated in calculating the total hosts, it is recommended to write out the following cheat sheet when working with octets, as this often makes conversions easier and reduces the amount of multiplication required.
+Note: While you can use the "multiply by 2 and add current digit" process demonstrated in calculating the total addresses, it is recommended to write out the following cheat sheet when working with octets, as this often makes conversions easier and reduces the amount of multiplication required.
 
 2^7  2^6  2^5  2^4  2^3  2^2  2^1  2^0
 128  64   32   16   8    4    2    1
@@ -1072,7 +1077,7 @@ Applying the host bits method to the interesting octet keeps the math simple and
         # Step 4: First and Last Usable Hosts
         self._show_first_last_host_calc_block_method()
 
-        # Step 5: Total Hosts and Total Usable Hosts
+        # Step 5: Total Addresses and Total Usable Hosts
         self._show_calc_total_hosts_block_method()
 
     def _show_block_size_calc(self):
@@ -1527,38 +1532,38 @@ Step 4: Calculate the first and last usable hosts
 With the network ID {self.netIDStr} and broadcast address {self.broadcastStr}, calculating the first and last usable host is rather simple. For the first host, add 1 to the network ID. For the last host, subtract 1 from the broadcast address.
 
 First host = {self.netIDStr} + 1 = {firstHost}
-Last host = {self.broadcastStr} - 1 = {lastHost}
-""")
+Last host = {self.broadcastStr} - 1 = {lastHost}""")
         assert firstHost == self.firstHost
         assert lastHost == self.lastHost
 
     def _show_calc_total_hosts_block_method(self):
-        print(f"""Step 5: Calculate the total hosts and total usable hosts
+        print(f"""
+Step 5: Calculate the total addresses and total usable hosts
 
-There are two methods to calculate the total hosts within a network:
-1. Compute the total hosts using the block size
-2. Compute the total hosts using the prefix length
+There are two methods to calculate the total addresses within a network:
+1. Compute the total addresses using the block size
+2. Compute the total addresses using the prefix length
 
 Afterwards, calculating the usable hosts is quite simple
 """)
 
-        # Method 1: compute total hosts using the block size
+        # Method 1: compute total addresses using the block size
         self._method_get_total_hosts_with_block_size()
 
-        # Method 2: compute total hosts using the prefix length
+        # Method 2: compute total addresses using the prefix length
         self._method_get_total_hosts_with_prefix_length()
 
         if self.prefixLen == 31 or self.prefixLen == 32:
-            message = f"applies and the total usable hosts are {self.totalHosts}."
+            message = f"applies and the total usable hosts are {self.totalAddresses}."
         else:
             message = "does not apply."
 
 
         print(f"""
-Now that the number of total hosts is known to be {self.totalHosts:,d}, you simply subtract 2 (1 for the broadcast and 1 for the network ID) to get the total usable hosts:
-{self.totalHosts:,d} - 2 = {self.totalHosts - 2:,d}
+Now that the number of total addresses is known to be {self.totalAddresses:,d}, you simply subtract 2 (1 for the broadcast and 1 for the network ID) to get the total usable hosts:
+{self.totalAddresses:,d} - 2 = {self.totalAddresses - 2:,d}
 
-The only exception is a /31 network where the total hosts = the total usable hosts and a /32 where there is always only one host.
+The only exception is a /31 network where the total addresses = the total usable hosts and a /32 where there is always only one host.
 
 Since this is a /{self.prefixLen}, this {message}""")
 
@@ -1566,7 +1571,7 @@ Since this is a /{self.prefixLen}, this {message}""")
         numHostOctets = (32 - self.prefixLen) // 8
         if self.prefixLen % 8 == 0: # /8, /16, /24
             numHostOctets -= 1
-        print(f"""Method 1: compute the total hosts using the block size
+        print(f"""Method 1: compute the total addresses using the block size
 
 This method involves taking the known block size {self.blockSize} and multiplying it by 256 for each octet with only host bits in the network ID {self.netIDStr}. For prefixes that fall on an octet boundary (/8, /16, /24), the "interesting octet" is just treated as another host bits octet.
 
@@ -1574,26 +1579,26 @@ For example:
 
 If the network ID is 1.0.0.0/8 and the block size is 256 then:
 There are 3 host only octets so:
-256 * 256 * 256 = 16777216 = total hosts
+256 * 256 * 256 = 16777216 = total addresses
 
 If the network ID is 10.128.0.0/9 and the block size is 128 then:
 There are 2 host only octets so:
-128 * 256 * 256 = 8388608 = total hosts
+128 * 256 * 256 = 8388608 = total addresses
 
 If the network ID is 172.17.36.0/22 and the block size is 4 then:
 There is 1 host only octets so:
-4 * 256 = 1024 = total hosts
+4 * 256 = 1024 = total addresses
 
 If the network ID is 192.168.0.0/26 and the block size is 64 then:
 There are 0 host only octets so:
-64 = total hosts
+64 = total addresses
 
 For {self.netIDStr}/{self.prefixLen} with a block size of {self.blockSize}:
 There are {numHostOctets} host only octet{'s' if numHostOctets != 1 else ''} so:""")
         if numHostOctets == 0:
-            print(f"{self.blockSize} = total hosts")
+            print(f"{self.blockSize} = total addresses")
         else:
-            print(f"{self.blockSize}{' * 256' * numHostOctets} = {self.blockSize * 256**numHostOctets} = total hosts")
+            print(f"{self.blockSize}{' * 256' * numHostOctets} = {self.blockSize * 256**numHostOctets} = total addresses")
 
             print(f"""
 If you need to estimate the total number of hosts and don't need an exact value, you can do this with the block method without resorting to exponents. Note that the prefix-length method is usually easier for estimation. This is just an alternative approach.
@@ -1714,32 +1719,32 @@ Final estimate:
 Final estimate:
 {2**(len(hostOctetFactors) - hostRemoved)}{' * 1000' * numHostOctets} = {2**(len(hostOctetFactors) - hostRemoved) * 1000**numHostOctets:,d}""")
 
-        assert self.blockSize * 256**numHostOctets == self.totalHosts
+        assert self.blockSize * 256**numHostOctets == self.totalAddresses
 
     def _method_get_total_hosts_with_prefix_length(self):
-        print(f"""Method 2: compute the total hosts using the prefix length
+        print(f"""Method 2: compute the total addresses using the prefix length
 
-Using the prefix length is simpler, but does potentially require calculating large exponents. To get the total hosts, you take the prefix length ({self.prefixLen}) and subtract it from 32 (the total number of bits in an IPv4 address). Then you take the difference and raise 2 to that power.
+Using the prefix length is simpler, but does potentially require calculating large exponents. To get the total addresses, you take the prefix length ({self.prefixLen}) and subtract it from 32 (the total number of bits in an IPv4 address). Then you take the difference and raise 2 to that power.
 
 For example, if the prefix was /1 then:
 32 - 1 = 31
-2^31 = 2,147,483,648 total hosts
+2^31 = 2,147,483,648 total addresses
 
 If the prefix was /12 then:
 32 - 12 = 20
-2^20 = 1,048,576 total hosts
+2^20 = 1,048,576 total addresses
 
 If the prefix was /16 then:
 32 - 16 = 16
-2^16 = 65,536 total hosts
+2^16 = 65,536 total addresses
 
 If the prefix was /27 then:
 32 - 27 = 5
-2^5 = 32 total hosts
+2^5 = 32 total addresses
 
 For {self.cidrAdr}:
 32 - {self.prefixLen} = {32 - self.prefixLen}
-2^{32 - self.prefixLen} = {2**(32 - self.prefixLen):,d} total hosts
+2^{32 - self.prefixLen} = {2**(32 - self.prefixLen):,d} total addresses
 
 If you need to estimate the total number of hosts and don't need an exact value, you can do this directly from the CIDR prefix using exponents. This is usually the easier way to estimate since everything is already expressed as a power of 2.
 
@@ -1758,25 +1763,25 @@ For example, if the prefix was /1 then:
 2^31 = 2^10 * 2^10 * 2^10 * 2^1
 
 Final estimate:
-1000 * 1000 * 1000 * 2 = 2,000,000,000 total hosts
+1000 * 1000 * 1000 * 2 = 2,000,000,000 total addresses
 
 If the prefix was /12 then:
 32 - 12 = 20
 2^20 = 2^10 * 2^10
 
 Final estimate:
-1000 * 1000 = 1,000,000 total hosts
+1000 * 1000 = 1,000,000 total addresses
 
 If the prefix was /16 then:
 32 - 16 = 16
 2^16 = 2^10 * 2^6
 
 Final estimate:
-1000 * 64 = 64,000 total hosts
+1000 * 64 = 64,000 total addresses
 
 If the prefix was /27 then:
 32 - 27 = 5
-2^5 = 32 total hosts
+2^5 = 32 total addresses
 
 For {self.cidrAdr}:""")
 
@@ -1786,6 +1791,6 @@ For {self.cidrAdr}:""")
 2^{32 - self.prefixLen} = {'2^10 * ' * (hostBits // 10)}2^{hostBits % 10}
 
 Final estimate:
-{'1000 * ' * (hostBits // 10)}{2**(hostBits % 10)} = {1000**(hostBits // 10) * 2**(hostBits % 10):,d} total hosts""")
+{'1000 * ' * (hostBits // 10)}{2**(hostBits % 10)} = {1000**(hostBits // 10) * 2**(hostBits % 10):,d} total addresses""")
 
-        assert 2**(32 - self.prefixLen) == self.totalHosts
+        assert 2**(32 - self.prefixLen) == self.totalAddresses
