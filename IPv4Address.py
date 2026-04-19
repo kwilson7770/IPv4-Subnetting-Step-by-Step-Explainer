@@ -192,16 +192,16 @@ class IPv4Address:
         or an integer of an IPv4 address (e.g. 1157895235).
         """
 
-        if isinstance(IPv4, str):
+        if isinstance(IPv4, int) or IPv4.isdigit():
+            # _validate_ipv4_int returns ipInt if validated, otherwise raises ValueError
+            self.ipInt = self._validate_ipv4_int(int(IPv4))
+            ipStr = IPv4Address.ip_string_from_int(self.ipInt)
+        elif isinstance(IPv4, str):
             ipStr = IPv4
             # clean up the ipStr by removing extra spaces
             ipStr = ipStr.strip()
             while "  " in ipStr:
                 ipStr = ipStr.replace("  ", " ")
-        elif isinstance(IPv4, int):
-            # _validate_ipv4_int returns ipInt if validated, otherwise raises ValueError
-            self.ipInt = self._validate_ipv4_int(IPv4)
-            ipStr = IPv4Address.ip_string_from_int(self.ipInt)
 
         if "/" in ipStr and " " not in ipStr: # CIDR notation (e.g. 10.0.0.1/8), but not IP (as an int) + prefix format
             ipStr, prefixLenStr = ipStr.split("/")
