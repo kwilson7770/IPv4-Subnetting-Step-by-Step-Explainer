@@ -41,7 +41,20 @@ or an integer of an IPv4 address (e.g. 1157895235)."""
         type=int,
         choices=range(1, 33),
         metavar="[1-32]",
-        help="New CIDR prefix length for subnets of given IP between 1 and 32"
+        help="Target CIDR prefix length for subnet generation (1-32)"
+    )
+
+    parser.add_argument(
+        "--subnet-limit",
+        type=int,
+        default=1000,
+        help="Maximum number of subnet entries to display (0 = no limit, default: 1000)"
+    )
+
+    parser.add_argument(
+        "--octet-boundary",
+        action="store_true",
+        help="Limits displayed subnet range to an octet-aligned window for visualization only. Does not change subnet sizing, block size, or subnet calculation logic."
     )
 
     parser.add_argument(
@@ -49,7 +62,7 @@ or an integer of an IPv4 address (e.g. 1157895235)."""
         type=int,
         choices=range(1, 33),
         metavar="[1-32]",
-        help="New CIDR prefix length for supernet of given IP between 1 and 32"
+        help="Target CIDR prefix length for supernet generation (1-32)"
     )
 
     args = parser.parse_args()
@@ -67,8 +80,11 @@ or an integer of an IPv4 address (e.g. 1157895235)."""
         print(str(ip))
 
     if args.subnet:
+        subnetByOctetBoundary = args.octet_boundary
+
         print(f"Subnets with a /{args.subnet} prefix:")
-        for subnet in ip.subnets(args.subnet):
+
+        for subnet in ip.subnets(args.subnet, args.subnet_limit, subnetByOctetBoundary):
             print(f"  - {subnet.netIDStr}/{subnet.prefixLen}")
 
     if args.supernet:

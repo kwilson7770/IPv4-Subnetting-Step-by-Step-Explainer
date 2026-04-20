@@ -340,25 +340,78 @@ class IPv4Address:
         # Otherwise, check if the IP falls within the network range (from network ID to broadcast address)
         return self.netIDInt <= ipInt <= self.broadcastInt
 
-    def subnets(self, newPrefix):
-        """Generates subnets from the current network based on the given prefix length."""
+    def subnets(self, newPrefix, limit=1000, subnetByOctetBoundary=False):
+        """
+        Generates subnet blocks using fixed-size stepping derived from CIDR prefix length.
 
+        The method computes a constant block size (2^(32 - newPrefix)) and iterates
+        through the address space from the network ID upward in equal increments.
+
+        Parameters:
+            newPrefix (int): Target subnet prefix length (/8 to /32).
+            limit (int): Maximum number of subnets to generate (0 = no limit).
+            subnetByOctetBoundary (bool):
+                if True, limits subnet output to an octet-aligned segment of the address space.
+
+                This does NOT change subnet sizing, block size, stepping behavior, or subnet
+                generation logic. It only restricts which generated subnet results are displayed
+                for visualization purposes.
+
+        Behavior Notes:
+            - Subnets are always generated using fixed-size block stepping.
+            - Octet-boundary mode only restricts which generated results are displayed and does not affect subnet calculation or generation.
+        """
+
+        # Validate prefix range
         if newPrefix <= self.prefixLen or newPrefix > 32:
             raise ValueError(f"newPrefix must be greater than the current prefix length ({self.prefixLen}) and <= 32")
 
-        # If newPrefix is 31 or 32, no subnets are possible
+        # Skip /31 and /32 since they do not subdivide into usable smaller subnets in this context
         if newPrefix >= 31:
-            yield from ()  # return an empty iterator because there are no subnets
+            yield from ()
+            return
 
-        # Calculate the size of each subnet (block size) based on the new prefix length
-        block = 2 ** (32 - newPrefix)
+        # Validate limit
+        if limit < 0:
+            raise ValueError(f"Provided limit ({limit}) is invalid. Limit must be >= 0")
 
-        # Generate block size subnets by stepping through the IP range from the network ID and stopping right before the broadcast address
-        for subnetIPInt in range(self.netIDInt, self.broadcastInt + 1, block):
-            if subnetIPInt >= self.broadcastInt:
-                break  # Stop generating subnets if the next subnet would go beyond the broadcast address
+        # Calculate number of IPs per subnet
+        blockSize = 2 ** (32 - newPrefix)
 
-            yield IPv4Address(f"{subnetIPInt} /{newPrefix}", self.showSteps) # Yield the new subnet as an IPv4Address object
+        finalSubnetInt = self.broadcastInt
+
+        # Optional: constrain subnetting to octet boundaries (/8, /16, /24) if the new prefix length is in a different octet than the current one
+        if subnetByOctetBoundary and self.prefixLen // 8 != newPrefix // 8:
+
+            # Adjust broadcast range so subnetting stays within a single octet boundary
+            if newPrefix > 24:
+                finalSubnetInt = (self.broadcastInt & 0x000000FF) | self.netIDInt
+            elif newPrefix > 16:
+                finalSubnetInt = (self.broadcastInt & 0x0000FF00) | self.netIDInt
+            elif newPrefix > 8:
+                finalSubnetInt = (self.broadcastInt & 0x00FF0000) | self.netIDInt
+            else:
+                finalSubnetInt = (self.broadcastInt & 0xFF000000) | self.netIDInt
+
+            # If subnetting exactly on an octet boundary, include the final subnet
+            if newPrefix % 8 == 0:
+                finalSubnetInt += 1
+
+        count = 0
+
+        for subnetIPInt in range(self.netIDInt, finalSubnetInt + 1, blockSize):
+            # Prevent going over or reaching the broadcast value
+            if subnetIPInt >= finalSubnetInt:
+                break
+
+            # Enforce subnet limit (if limit > 0)
+            if limit > 0 and count >= limit:
+                print(f"Limit of {limit} subnet{'s' if limit != 1 else ''} reached. Stopping subnet generation.")
+                break
+
+            yield IPv4Address(f"{subnetIPInt} /{newPrefix}")
+
+            count += 1
 
     def supernet(self, newPrefix):
         """Generate a supernet (larger network) by combining smaller networks into one, based on the provided new prefix length."""
