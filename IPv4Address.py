@@ -1,8 +1,8 @@
 class IPv4Address:
     """This class represents an IPv4 address and provides methods to manipulate and analyze the address. It supports various operations like determining address class, calculating subnets, supernets, and performing validations on IPv4 address and prefix lengths."""
 
-    TEN_NET_START = 0x0A000000 # 10.0.0.0
-    TEN_NET_END   = 0x0AFFFFFF # 10.255.255.255
+    PRIVATE_10_START = 0x0A000000 # 10.0.0.0
+    PRIVATE_10_END   = 0x0AFFFFFF # 10.255.255.255
 
     LOOPBACK_START = 0x7F000000 # 127.0.0.0
     LOOPBACK_END   = 0x7FFFFFFF # 127.255.255.255
@@ -93,7 +93,7 @@ class IPv4Address:
 
         # Set various attributes as they apply to the IP address
         self.adrClass = self._calculate_address_class()
-        self.privateUse = IPv4Address.TEN_NET_START <= self.ipInt <= IPv4Address.TEN_NET_END or IPv4Address.PRIVATE_172_START <= self.ipInt <= IPv4Address.PRIVATE_172_END or IPv4Address.PRIVATE_192_START <= self.ipInt <= IPv4Address.PRIVATE_192_END
+        self.privateUse = IPv4Address.PRIVATE_10_START <= self.ipInt <= IPv4Address.PRIVATE_10_END or IPv4Address.PRIVATE_172_START <= self.ipInt <= IPv4Address.PRIVATE_172_END or IPv4Address.PRIVATE_192_START <= self.ipInt <= IPv4Address.PRIVATE_192_END
         self.linkLocal = IPv4Address.LINKLOCAL_START <= self.ipInt <= IPv4Address.LINKLOCAL_END
         self.multicast = IPv4Address.MULTICAST_START <= self.ipInt <= IPv4Address.MULTICAST_END
         self.reserved = IPv4Address.RESERVED_START <= self.ipInt <= IPv4Address.RESERVED_END
@@ -348,7 +348,7 @@ class IPv4Address:
         through the address space from the network ID upward in equal increments.
 
         Parameters:
-            newPrefix (int): Target subnet prefix length (/8 to /32).
+            newPrefix (int): Target subnet prefix length that is greater than the existing prefix length
             limit (int): Maximum number of subnets to generate (0 = no limit).
             subnetByOctetBoundary (bool):
                 if True, limits subnet output to an octet-aligned segment of the address space.
@@ -535,7 +535,7 @@ Total Addresses
                    {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt, '032b'))}
           Add 1: + 00000000 00000000 00000000 00000001
                    -----------------------------------
-Total Addresses:  {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))}
+Total Addresses:   {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))}
 
 IP Address
 {self.ipStr}
@@ -559,10 +559,10 @@ Last Host
 {IPv4Address._space_out_binary_string(format(self.broadcastInt - 1, '032b'))} -> {self.lastHost}
 
 Total Addresses
-{IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))} -> {self.totalAddresses}
+{IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))} -> {self.totalAddresses:,d}
 
 Usable Hosts
-{self.totalAddresses} - 2 = {self.usableHosts}""")
+{self.totalAddresses} - 2 = {self.usableHosts:,d}""")
 
     def _print_block_size_steps(self):
         blockSize = 2**(8 - self.prefixLen % 8)
@@ -594,10 +594,10 @@ Last Host
 {self.broadcastStr} - 1 = {self.lastHost}
 
 Total Addresses
-{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen)} total addresses
+{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen):,d} total addresses
 
 Usable Hosts
-{self.totalAddresses} - 2 = {self.usableHosts}
+{self.totalAddresses} - 2 = {self.usableHosts:,d}
 """)
             return
 
@@ -627,10 +627,10 @@ Last Host
 {self.broadcastStr} - 1 = {self.lastHost}
 
 Total Addresses
-{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen)} total addresses
+{self.cidrAdr} -> {self.prefixLen} -> 32 - {self.prefixLen} = {32 - self.prefixLen} -> 2^{32 - self.prefixLen} = {2**(32 - self.prefixLen):,d} total addresses
 
 Usable Hosts
-{self.totalAddresses} - 2 = {self.usableHosts}
+{self.totalAddresses:,d} - 2 = {self.usableHosts:,d}
 """)
 
     def _explain_how_to_calculate(self):
@@ -679,19 +679,24 @@ Both methods will give you the same final answers:
 - First and last usable host
 - Total number of addresses
 
-Both methods will be gone through step-by-step so you can see how they work and compare them.
-""")
+Both methods will be gone through step-by-step so you can see how they work and compare them.""")
 
         # Show both methods
         self._explain_binary_steps()
         self._explain_block_method_steps()
 
     def _explain_binary_steps(self):
-        print(f"\n--- Binary Method for {self.cidrAdr} ---\n")
+        print(f"""
+
++{'=' * len(f'--- Binary Method for {self.cidrAdr} ---')}+
+|--- Binary Method for {self.cidrAdr} ---|
++{'=' * len(f'--- Binary Method for {self.cidrAdr} ---')}+
+
+""")
 
         # Step 1: IP to Binary
         octets = self.ipStr.split('.')
-        print(f"Step 1: Convert the IP address {self.ipStr} to binary by splitting octets: {', '.join(octets)}")
+        print(f"Step 1: Convert the IP address {self.ipStr} to binary by splitting octets: {', '.join(octets)}\n")
         self._show_binary_conversion_methods(octets)
 
         # Step 2: Subnet Mask
@@ -812,7 +817,7 @@ Method 1: Subtract Powers of 2
         assert " ".join(bins) == self.ipBin
 
     def _show_mask_to_binary(self):
-        print("\nStep 2: Convert the subnet mask to binary.")
+        print("\nStep 2: Convert the subnet mask to binary.\n")
         print(f"If this is in dotted-decimal notation already ({self.netmaskStr}) then repeat everything in step 1. If the subnet mask was provided as a prefix length ({self.prefixLen}) from CIDR notation ({self.cidrAdr}) then simply write out {self.prefixLen} '1's (prefix length) and {32 - self.prefixLen} '0's (32 - {self.prefixLen} = {32 - self.prefixLen}).")
 
         netmask = '1' * self.prefixLen + '0' * (32 - self.prefixLen)
@@ -871,12 +876,15 @@ Subnet mask:   {self.netmaskBin}
         assert ~ self.netmaskInt & IPv4Address.ALL_ONES == self.hostmaskInt
 
     def _show_network_id_calc(self):
-        print("\nStep 4: Calculate the network ID using the IP address and subnet mask.")
-        print("This is done using a binary operation called bitwise AND (&). If both bits equal 1, the network ID bit is set to 1. Otherwise, the network ID is set to 0\n")
-        print(f" IP address:   {self.ipBin}")
-        print(f"Subnet mask: & {self.netmaskBin}")
-        print("               " + "-" * 35)
-        print(" Network ID:   " + IPv4Address._space_out_binary_string(format(self.ipInt & self.netmaskInt, '032b')))
+        print(f"""
+Step 4: Calculate the network ID using the IP address and subnet mask.
+
+This is done using a binary operation called bitwise AND (&). If both bits equal 1, the network ID bit is set to 1. Otherwise, the network ID is set to 0
+
+ IP address:   {self.ipBin}
+Subnet mask: & {self.netmaskBin}
+               -----------------------------------
+ Network ID:   {IPv4Address._space_out_binary_string(format(self.ipInt & self.netmaskInt, '032b'))}""")
 
         # This is not necessary since this is how the class calculates the netmaskBin
         assert IPv4Address._space_out_binary_string(format(self.ipInt & self.netmaskInt, '032b')) == self.netIDBin
@@ -980,9 +988,9 @@ Method 1: Add Powers of 2
 
 This is essentially the reverse of method 1 for converting decimal to binary, this should be familiar. The big difference is that the total addresses could be 2,147,483,648 if the prefix length was 1. As such, you will need a much bigger base 10 equivalent for the powers of 2 if you have a small prefix. Here is a cheat sheet:
 
-/1          /2          /3         /4         /5         /6        /7        /8        /9       /10      /11      /12      /13     /14     /15     /16    /17    /18    /19   /20   /21   /22   /23  /24  /25  /26  /27  /28  /29  /30  /31  /32
-2^31        2^30        2^29       2^28       2^27       2^26      2^25      2^24      2^23     2^22     2^21     2^20     2^19    2^18    2^17    2^16   2^15   2^14   2^13  2^12  2^11  2^10  2^9  2^8  2^7  2^6  2^5  2^4  2^3  2^2  2^1  2^0
-2147483648  1073741824  536870912  268435456  134217728  67108864  33554432  16777216  8388608  4194304  2097152  1048576  524288  262144  131072  65536  32768  16384  8192  4096  2048  1024  512  256  128  64   32   16   8    4    2    1
+/1             /2             /3           /4           /5           /6          /7          /8          /9         /10        /11        /12        /13      /14      /15      /16     /17     /18     /19    /20    /21    /22    /23  /24  /25  /26  /27  /28  /29  /30  /31  /32
+2^31           2^30           2^29         2^28         2^27         2^26        2^25        2^24        2^23       2^22       2^21       2^20       2^19     2^18     2^17     2^16    2^15    2^14    2^13   2^12   2^11   2^10   2^9  2^8  2^7  2^6  2^5  2^4  2^3  2^2  2^1  2^0
+2,147,483,648  1,073,741,824  536,870,912  268,435,456  134,217,728  67,108,864  33,554,432  16,777,216  8,388,608  4,194,304  2,097,152  1,048,576  524,288  262,144  131,072  65,536  32,768  16,384  8,192  4,096  2,048  1,024  512  256  128  64   32   16   8    4    2    1
 
 To start, add the base 10 value associated with the power of 2 wherever the binary digit is 1 and skip adding the value when the binary digit is 0. Given the total addresses value in binary is:
 {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netIDInt + 1, '032b'))}
@@ -993,13 +1001,13 @@ if you decided to include all of the zeros when following these steps, it would 
         num = 0
         for j in range(31, -1, -1):
             toPrint += f"{binStr[31 - j]} * 2^{j} + "
-            toPrint2 += f"{int(binStr[31 - j])* 2**j} + "
+            toPrint2 += f"{int(binStr[31 - j])* 2**j:,d} + "
             num += int(binStr[31 - j])* 2**j
 
         print(f"""{toPrint.rstrip(' +')} =
 
 Which simplifies too:
-{toPrint2.rstrip(' +')} = {num}
+{toPrint2.rstrip(' +')} = {num:,d}
 
 However, if you only wrote down a number to add when the value is 1, it would be this:""")
 
@@ -1009,7 +1017,7 @@ However, if you only wrote down a number to add when the value is 1, it would be
         for j in range(31, -1, -1):
             if binStr[31 - j] == "1":
                 toPrint += f"{binStr[31 - j]} * 2^{j} + "
-                toPrint2 += f"{int(binStr[31 - j])* 2**j} + "
+                toPrint2 += f"{int(binStr[31 - j])* 2**j:,d} + "
                 num2 += int(binStr[31 - j])* 2**j
 
         if toPrint == "":
@@ -1019,7 +1027,7 @@ However, if you only wrote down a number to add when the value is 1, it would be
             print(f"""{toPrint.rstrip(' +')} =
 
 Which simplifies too:
-{toPrint2.rstrip(' +')} = {num2}""")
+{toPrint2.rstrip(' +')} = {num2:,d}""")
 
         assert num == num2 and num == self.totalAddresses
 
@@ -1089,7 +1097,7 @@ Here is the rest of the process:
             if binStr[index] == " ":
                 continue
 
-            print(f"{binStr}\n{' ' * index}^\n{num} * 2 + {binStr[index]} = {num * 2 + int(binStr[index])}\n")
+            print(f"{binStr}\n{' ' * index}^\n{num:,d} * 2 + {binStr[index]} = {num * 2 + int(binStr[index]):,d}\n")
             num = num * 2 + int(binStr[index])
 
         # Check my "work" with an assertion (the class uses a simpler calculation method that should have zero errors)
@@ -1189,13 +1197,18 @@ If you rather use "multiply by 2 and add current digit" process for each octet, 
                 print(f"Octet {octetNum + 1} = {num}")
                 octets.append(str(num))
 
-            print(f"\nFinally, combine them together with a period separating them:\n{label2}: {'.'.join(octets)}\n")
+            print(f"\nFinally, combine them together with a period separating them:\n{label2}: {'.'.join(octets)}")
 
             # Check my "work" with an assertion (the class uses a simpler calculation method that should have zero errors)
             assert '.'.join(octets) == ipAdr
 
     def _explain_block_method_steps(self):
-        print(f"\n--- Block Size Method for {self.cidrAdr} ---\n")
+        print(f"""
+
++{'=' * len(f'--- Block Size Method for {self.cidrAdr} ---')}+
+|--- Block Size Method for {self.cidrAdr} ---|
++{'=' * len(f'--- Block Size Method for {self.cidrAdr} ---')}+
+""")
 
         print(f"""
 Steps to calculate key IPv4 information for {self.cidrAdr} -- Block Size/Host Bits method
@@ -1730,8 +1743,7 @@ Broadcast address = 133.255.255.255
 For {self.netIDStr}/{self.prefixLen} and the block size of {self.blockSize}:
 Update interesting octet value = {octetVal} + {self.blockSize} - 1 = {octetVal + self.blockSize - 1} = {updatedIP}
 Host only bits to 255 = {updatedIP} -> {broadcast}
-Broadcast address = {broadcast}
-""")
+Broadcast address = {broadcast}""")
 
         assert broadcast == self.broadcastStr
 
@@ -1794,26 +1806,26 @@ For example:
 
 If the network ID is 1.0.0.0/8 and the block size is 256 then:
 There are 3 host only octets so:
-256 * 256 * 256 = 16777216 = total addresses
+256 * 256 * 256 = 16,777,216 = total addresses
 
 If the network ID is 10.128.0.0/9 and the block size is 128 then:
 There are 2 host only octets so:
-128 * 256 * 256 = 8388608 = total addresses
+128 * 256 * 256 = 8,388,608 = total addresses
 
 If the network ID is 172.17.36.0/22 and the block size is 4 then:
 There is 1 host only octets so:
-4 * 256 = 1024 = total addresses
+4 * 256 = 1,024 = total addresses
 
 If the network ID is 192.168.0.0/26 and the block size is 64 then:
 There are 0 host only octets so:
 64 = total addresses
 
 For {self.netIDStr}/{self.prefixLen} with a block size of {self.blockSize}:
-There are {numHostOctets} host only octet{'s' if numHostOctets != 1 else ''} so:""")
+There {'are' if numHostOctets != 1 else 'is'} {numHostOctets} host only octet{'s' if numHostOctets != 1 else ''} so:""")
         if numHostOctets == 0:
-            print(f"{self.blockSize} = total addresses")
+            print(f"{self.blockSize:,d} = total addresses")
         else:
-            print(f"{self.blockSize}{' * 256' * numHostOctets} = {self.blockSize * 256**numHostOctets} = total addresses")
+            print(f"{self.blockSize}{' * 256' * numHostOctets} = {self.blockSize * 256**numHostOctets:,d} = total addresses")
 
             print(f"""
 If you need to estimate the total number of hosts and don't need an exact value, you can do this with the block method without resorting to exponents. Note that the prefix-length method is usually easier for estimation. This is just an alternative approach.
@@ -1937,7 +1949,8 @@ Final estimate:
         assert self.blockSize * 256**numHostOctets == self.totalAddresses
 
     def _method_get_total_hosts_with_prefix_length(self):
-        print(f"""Method 2: compute the total addresses using the prefix length
+        print(f"""
+Method 2: compute the total addresses using the prefix length
 
 Using the prefix length is simpler, but does potentially require calculating large exponents. To get the total addresses, you take the prefix length ({self.prefixLen}) and subtract it from 32 (the total number of bits in an IPv4 address). Then you take the difference and raise 2 to that power.
 

@@ -351,7 +351,7 @@ Provides subnet breakdowns based on the selected prefix length:
 
 ## Python Class Usage (`IPv4Address.py`)
 
-In addition to the CLI, you can also use the code as a library by importing the `IPv4Address` class from `IPv4Address.py`. This allows for programmatic access to the subnetting methods and calculations.
+In addition to the CLI and GUI, you can also use the code as a library by importing the `IPv4Address` class from `IPv4Address.py`. This allows for programmatic access to the subnetting methods and calculations.
 
 ### Example Usage in Python
 

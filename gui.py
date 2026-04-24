@@ -42,7 +42,7 @@ class SubnetGUI:
         self.inputFormat = 0
         self.darkMode = True
         self._message_after_id = None
-        self.useOctetBoundary = True
+        self.useOctetBoundary = False
         self.mode = "Full"
 
     def _build_layout(self):
@@ -343,6 +343,8 @@ class SubnetGUI:
         # /32 cannot be subnetted further (single host)
         if self.ip.prefixLen == 32:
             self.subnetSlider.configure(state="disabled")
+            self.clearTable()
+            self.tableFrame.configure(text=f"Subnets ({self.mode})")
             return
         else:
             self.subnetSlider.configure(state="normal")
@@ -462,15 +464,28 @@ class SubnetGUI:
             self.menu.tk_popup(event.x_root, event.y_root)
 
     def displayMessage(self, color, message, clearAfterSeconds=3):
+        # Defer the update to the Tkinter event loop instead of running it immediately to avoid UI glitches from forced redraws and to ensure the update is processed in the correct event loop order rather than interleaving with other pending callbacks such as clears
+        # This also handles rapid successive updates from sources like sliders or text input by allowing them to collapse into a single visible message representing only the most recent state
+
+        # Defer the update to the Tkinter event loop instead of running it immediately to avoid UI glitches from forced redraws or from being cleared immediately if the _clear_message function is called immiately after setting the text
+        # This handles rapid updates to the label from the slider or text input and only displays the last message during the burst of function calls
+        self.root.after(0, self._apply_message, color, message, clearAfterSeconds)
+
+    def _apply_message(self, color, message, clearAfterSeconds):
         self.statusLabel.config(text=message, foreground=color)
 
+        # cancel any previously scheduled clear so that an older message cannot clear the currently displayed message due to timing overlap in the event loop
         if self._message_after_id:
-            # cancel previous scheduled clear if still pending
             self.root.after_cancel(self._message_after_id)
+            self._message_after_id = None
 
+        # Having the clearing label scheduled in this scheduled function call prevents the text update and clearing from happening right after each other during bursts of updates to tkinter GUI elements
         if isinstance(clearAfterSeconds, int) and clearAfterSeconds > 0:
-            # schedule clearing the status label
-            self._message_after_id = self.root.after(clearAfterSeconds * 1000, lambda: self.statusLabel.config(text=""))
+            self._message_after_id = self.root.after(clearAfterSeconds * 1000, self._clear_message)
+
+    def _clear_message(self):
+        self.statusLabel.config(text="")
+        self._message_after_id = None
 
     def exportCSV(self):
         if not self.table.get_children():
