@@ -34,20 +34,26 @@ class SubnetGUI:
 
         # default value
         self.inputVariable.set("10.0.0.1/8")
+        self.entry.focus()
 
     def _init_state(self):
         self.ip = None
-        self.subnets = []
         self.supernetIP = None
         self.inputFormat = 0
         self.darkMode = True
         self._message_after_id = None
         self.useOctetBoundary = False
-        self.mode = "Full"
+        self.mode = "Classless"
 
     def _build_layout(self):
+        self.root.rowconfigure(0, weight=1) # have root expand vertically to fill out window
+        self.root.columnconfigure(0, weight=1) # have root expand horizontally to fill out window
+
         self.main = ttk.Frame(self.root, padding=10)
-        self.main.pack(fill="both", expand=True)
+        self.main.grid(row=0, column=0, sticky="nsew")
+
+        self.main.rowconfigure(3, weight=1) # have the table row expand vertically to take the remaining space
+        self.main.columnconfigure(0, weight=1) # have main expand horizontally to fill out window
 
         self._create_input_section()
         self._create_info_panel()
@@ -57,7 +63,8 @@ class SubnetGUI:
 
     def _create_input_section(self):
         top = ttk.Frame(self.main)
-        top.pack(fill="x", pady=(0, 10))
+        top.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        top.columnconfigure(2, weight=1) # have sliders expand horizontally to take the remaining space
 
         ttk.Label(top, text="IP Address / Subnet", style="Header.TLabel").grid(row=0, column=0, sticky="w")
 
@@ -66,15 +73,12 @@ class SubnetGUI:
         # Trigger update() whenever input text changes
         self.inputVariable.trace_add("write", lambda *_: self.update())
 
-        self.entry = ttk.Entry(top, textvariable=self.inputVariable, width=40, font=("Segoe UI", 10))
+        self.entry = ttk.Entry(top, textvariable=self.inputVariable, font=("Segoe UI", 10))
         self.entry.grid(row=1, column=0, padx=(0, 10), sticky="w")
 
-        self.statusLabel = ttk.Label(top, text="", foreground="red")
-        self.statusLabel.grid(row=2, column=0, padx=(0, 10), sticky="w")
-
-        ttk.Label(top, text="Prefix").grid(row=1, column=1, sticky="w")
-        ttk.Label(top, text="Subnet").grid(row=2, column=1, sticky="w")
-        ttk.Label(top, text="Supernet").grid(row=3, column=1, sticky="w")
+        ttk.Label(top, text="Prefix").grid(row=1, column=1, sticky="w", padx=(0, 3))
+        ttk.Label(top, text="Subnet").grid(row=2, column=1, sticky="w", padx=(0, 3))
+        ttk.Label(top, text="Supernet").grid(row=3, column=1, sticky="w", padx=(0, 3))
 
         self.prefixSlider = tk.Scale(top, from_=1, to=32, orient="horizontal", command=self.updatePrefix)
         self.prefixSlider.grid(row=1, column=2, sticky="ew")
@@ -85,16 +89,13 @@ class SubnetGUI:
         self.supernetSlider = tk.Scale(top, from_=1, to=32, orient="horizontal", command=self.supernet)
         self.supernetSlider.grid(row=3, column=2, sticky="ew")
 
-        top.columnconfigure(2, weight=1)
-
-        self.octetVar = tk.BooleanVar(value=False)
-
+        self.octetVar = tk.BooleanVar()
         self.octetCheckbox = ttk.Checkbutton(top, text="Octet-boundary mode (faster, visual)", variable=self.octetVar, command=self.onToggleOctet)
-        self.octetCheckbox.grid(row=3, column=0, columnspan=3, sticky="w", pady=(5, 0))
+        self.octetCheckbox.grid(row=2, column=0, sticky="w", pady=(5, 0))
 
     def _create_info_panel(self):
         info = ttk.LabelFrame(self.main, text="Address Details")
-        info.pack(fill="x", pady=(0, 10))
+        info.grid(row=1, column=0, sticky="ew", pady=(0, 10))
 
         self.labels = {}
 
@@ -108,7 +109,7 @@ class SubnetGUI:
             "firstHost", "broadcastInt", "loopback",
             "lastHost", "privateUse", "limitedBroadcast",
             "totalAddresses", "linkLocal", "adrClassStr",
-            "usableHosts", "multicast",  
+            "usableHosts", "multicast",
         ]
 
         fieldLabels = [
@@ -121,7 +122,7 @@ class SubnetGUI:
             "First Host", "Broadcast Int", "Loopback",
             "Last Host", "Private Use", "Limited Broadcast",
             "Total Addresses", "Link Local", "Legacy Class",
-            "Total Usable Hosts", "Multicast",  
+            "Total Usable Hosts", "Multicast",
         ]
 
         # Dynamically adds labels under Address Details section
@@ -133,24 +134,26 @@ class SubnetGUI:
 
     def _create_supernet_label(self):
         self.supernetLabel = ttk.Label(self.main, text="", style="Header.TLabel")
-        self.supernetLabel.pack(anchor="w", pady=(0, 5))
+        self.supernetLabel.grid(row=2, column=0, sticky="w")
 
     def _create_table(self):
         self.tableFrame = ttk.LabelFrame(self.main, text="Subnets", style="Header.TLabelframe")
-        self.tableFrame.pack(fill="both", expand=True)
+        self.tableFrame.grid(row=3, column=0, sticky="nsew")
+
+        self.tableFrame.rowconfigure(0, weight=1) # have subnets table expand vertically to fill out window
+        self.tableFrame.columnconfigure(0, weight=1) # have subnets table expand horizontally to fill out window
 
         columns = ("Network", "HostRange", "Broadcast")
 
         self.table = ttk.Treeview(self.tableFrame, columns=columns, show="headings", height=12)
+        self.table.grid(row=0, column=0, sticky="nsew")
 
         for col, text in (("Network", "Network ID"), ("HostRange", "Usable Host Range"), ("Broadcast", "Broadcast")):
             self.table.heading(col, text=text, command=lambda c=col: self.sortColumn(c, True))
             self.table.column(col, anchor="center", width=180)
 
-        self.table.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(self.tableFrame, command=self.table.yview)
-        scrollbar.pack(side="right", fill="y")
+        scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.table.config(yscrollcommand=scrollbar.set)
 
@@ -170,16 +173,17 @@ class SubnetGUI:
 
     def _create_bottom_controls(self):
         bottomFrame = ttk.Frame(self.main)
-        bottomFrame.pack(fill="x", pady=10)
+        bottomFrame.grid(row=4, column=0, sticky="ew", pady=(10, 0))
+        bottomFrame.columnconfigure(1, weight=1) # have buttons/status bar expand horizontally to fill out window
 
         self.themeButton = ttk.Button(bottomFrame, text="Light Mode", command=self.toggleTheme)
-        self.themeButton.pack(side="left")
+        self.themeButton.grid(row=0, column=0, sticky="w")
 
-        center = ttk.Frame(bottomFrame)
-        center.place(relx=0.5, rely=0, anchor="n")
+        self.statusBar = ttk.Label(bottomFrame, text="Ready", anchor="w")
+        self.statusBar.grid(row=0, column=1, sticky="ew", padx=10)
 
-        self.exportButton = ttk.Button(center, text="Export to CSV", command=self.exportCSV)
-        self.exportButton.pack()
+        self.exportButton = ttk.Button(bottomFrame, text="Export to CSV", command=self.exportCSV)
+        self.exportButton.grid(row=0, column=2, sticky="e")
 
     def setupTheme(self):
         self.style = ttk.Style()
@@ -265,7 +269,10 @@ class SubnetGUI:
 
             # Bind IPv4Address properties to UI labels dynamically
             for key in self.labels:
-                self.labels[key].config(text=str(getattr(ip, key)))
+                if key == "totalAddresses" or key == "usableHosts" or key.endswith("Int"):
+                    self.labels[key].config(text=f"{getattr(ip, key):,d}")
+                else:
+                    self.labels[key].config(text=str(getattr(ip, key)))
 
             self.prefixSlider.set(ip.prefixLen)
 
@@ -279,18 +286,20 @@ class SubnetGUI:
 
             self.subnet(self.subnetSlider.get())
             self.supernet(self.supernetSlider.get())
-            self.statusLabel.config(text="")
+
+            # set theme foreground color and don't clear the message
+            self.setStatus("", "Ready", 0)
         except Exception as ex:
             for key in self.labels:
                 self.labels[key].config(text="")
 
             self.clearTable()
-            self.supernetLabel.config(text="")
-            if len(str(ex)) > 40:
-                self.displayMessage("red", f"Invalid input\n{str(ex)[:40]}...", 10)
+            self.supernetLabel.config(text="Supernet:")
+            if len(str(ex)) > 120:
+                self.setStatus("red", f"Invalid input: {str(ex)[:120]}...", 10)
+                print(f"Invalid input: {str(ex)}")
             else:
-                self.displayMessage("red", f"Invalid input\n{ex}", 10)
-            print(f"Exception: {ex}")
+                self.setStatus("red", f"Invalid input: {str(ex)}", 10)
 
     def detectFormat(self, address):
         """
@@ -321,19 +330,20 @@ class SubnetGUI:
         if not self.ip:
             return
 
-        # these are always a /32 IP address and cannot be modified via prefix slider
-        if self.inputFormat == 2 or self.inputFormat == 5:
-            self.prefixSlider.set(self.ip.prefixLen)
-            return
-        
         newPrefix = int(value)
         if newPrefix != self.ip.prefixLen: # ensure there is a change
             if self.inputFormat == 1:
+                self.inputVariable.set(f"{self.ip.ipStr}/{newPrefix}")
+            elif self.inputFormat == 2:
+                self.inputFormat = 1 # changing the prefix changes the format
                 self.inputVariable.set(f"{self.ip.ipStr}/{newPrefix}")
             elif self.inputFormat == 3:
                 temp = IPv4Address(f"{self.ip.ipStr}/{newPrefix}")
                 self.inputVariable.set(f"{self.ip.ipStr} {temp.netmaskStr}")
             elif self.inputFormat == 4:
+                self.inputVariable.set(f"{self.ip.ipInt} /{newPrefix}")
+            elif self.inputFormat == 5:
+                self.inputFormat = 4 # changing the prefix changes the format
                 self.inputVariable.set(f"{self.ip.ipInt} /{newPrefix}")
 
     def subnet(self, value):
@@ -366,16 +376,16 @@ class SubnetGUI:
             if not self.useOctetBoundary:
                 if totalSubnets > 4096:
                     self.tableFrame.configure(text=f"Subnets ({self.mode})")
-                    self.displayMessage("red", f"Too many subnets ({totalSubnets:,d}). Enable octet-boundary mode or reduce prefix.")
+                    self.setStatus("red", f"Too many subnets ({totalSubnets:,d}). Enable octet-boundary mode or reduce prefix.")
                     return
-                self.tableFrame.configure(text=f"{totalSubnets} Subnets ({self.mode})")
+                self.tableFrame.configure(text=f"{totalSubnets:,d} Subnets ({self.mode})")
 
             for i, ip in enumerate(self.ip.subnets(newPrefix, limit=4096, subnetByOctetBoundary=self.useOctetBoundary)):
                 tag = "even" if i % 2 == 0 else "odd"
                 self.table.insert("", "end", values=(ip.netIDCIDR, f"{ip.firstHost} - {ip.lastHost}", ip.broadcastStr), tags=(tag,))
 
             if self.useOctetBoundary:
-                self.tableFrame.configure(text=f"{len(self.table.get_children())} Subnets ({self.mode})")
+                self.tableFrame.configure(text=f"{len(self.table.get_children()):,d} Subnets ({self.mode})")
 
     def supernet(self, value):
         if not self.ip:
@@ -384,7 +394,7 @@ class SubnetGUI:
         # /1 cannot be supernetted further (largest possible network)
         if self.ip.prefixLen == 1:
             self.supernetSlider.configure(state="disabled")
-            self.supernetLabel.config(text="N/A")
+            self.supernetLabel.config(text="Supernet: N/A")
             return
         else:
             self.supernetSlider.configure(state="normal")
@@ -429,7 +439,7 @@ class SubnetGUI:
 
     def onToggleOctet(self):
         self.useOctetBoundary = self.octetVar.get()
-        self.mode = "Octet-boundary" if self.useOctetBoundary else "Full"
+        self.mode = "Octet-boundary" if self.useOctetBoundary else "Classless"
         self.clearTable()
         self.subnet(self.subnetSlider.get())
 
@@ -463,7 +473,7 @@ class SubnetGUI:
                 self.table.selection_set(rowId)
             self.menu.tk_popup(event.x_root, event.y_root)
 
-    def displayMessage(self, color, message, clearAfterSeconds=3):
+    def setStatus(self, color, message, clearAfterSeconds=3):
         # Defer the update to the Tkinter event loop instead of running it immediately to avoid UI glitches from forced redraws and to ensure the update is processed in the correct event loop order rather than interleaving with other pending callbacks such as clears
         # This also handles rapid successive updates from sources like sliders or text input by allowing them to collapse into a single visible message representing only the most recent state
 
@@ -472,7 +482,7 @@ class SubnetGUI:
         self.root.after(0, self._apply_message, color, message, clearAfterSeconds)
 
     def _apply_message(self, color, message, clearAfterSeconds):
-        self.statusLabel.config(text=message, foreground=color)
+        self.statusBar.config(text=message, foreground=color)
 
         # cancel any previously scheduled clear so that an older message cannot clear the currently displayed message due to timing overlap in the event loop
         if self._message_after_id:
@@ -480,22 +490,23 @@ class SubnetGUI:
             self._message_after_id = None
 
         # Having the clearing label scheduled in this scheduled function call prevents the text update and clearing from happening right after each other during bursts of updates to tkinter GUI elements
+        # Note: if clearAfterSeconds <= 0, the message won't be cleared
         if isinstance(clearAfterSeconds, int) and clearAfterSeconds > 0:
             self._message_after_id = self.root.after(clearAfterSeconds * 1000, self._clear_message)
 
     def _clear_message(self):
-        self.statusLabel.config(text="")
+        self.statusBar.config(text="Ready", foreground="")
         self._message_after_id = None
 
     def exportCSV(self):
         if not self.table.get_children():
-            self.displayMessage("red", "No subnet data to export")
+            self.setStatus("red", "No subnets to export")
             return
 
         filePath = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")], title="Save subnet table")
 
         if not filePath:
-            self.displayMessage("red", "Export cancelled")
+            self.setStatus("red", "Export cancelled")
             return # user canceled
 
         try:
@@ -507,10 +518,10 @@ class SubnetGUI:
                 for row in self.table.get_children():
                     writer.writerow(self.table.item(row)["values"])
 
-            self.displayMessage("green", "Export successful")
+            self.setStatus("green", "Export successful")
             print(f"Saved subnet data to {filePath}")
         except Exception as ex:
-            self.displayMessage("red", "Export failed", 5)
+            self.setStatus("red", "Export failed", 5)
             print(ex)
 
 if __name__ == "__main__":
