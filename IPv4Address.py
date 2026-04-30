@@ -1794,49 +1794,64 @@ The only exception is a /31 network where the total addresses = the total usable
 
 Since this is a /{self.prefixLen}, this {message}""")
 
+    def _distribute(self, powers, sourceIndex, startIndex):
+        taken = 0
+        for i in range(len(powers) - 1, startIndex, -1):
+            while powers[sourceIndex] > 0 and powers[i] < 10:
+                powers[sourceIndex] -= 1
+                powers[i] += 1
+                taken += 1
+        return taken
+
     def _method_get_total_hosts_with_block_size(self):
         numHostOctets = (32 - self.prefixLen) // 8
         if self.prefixLen % 8 == 0: # /8, /16, /24
             numHostOctets -= 1
-        print(f"""Method 1: compute the total addresses using the block size
 
-This method involves taking the known block size {self.blockSize} and multiplying it by 256 for each octet with only host bits in the network ID {self.netIDStr}. For prefixes that fall on an octet boundary (/8, /16, /24), the "interesting octet" is just treated as another host bits octet.
+        message = "there are no full host octets"
+        if numHostOctets > 1:
+            message = f"the last {numHostOctets} octets are entirely host bits ({('0.' * numHostOctets)[:-1]})"
+        elif numHostOctets == 1:
+            message = "the last octet is entirely host bits (0)"
+
+        print(f"""Method 1: compute the total number of addresses using the block size
+
+This method uses the block size and multiplies it by 256 for each octet that consists entirely of host bits in the network address.
+
+For prefixes that fall on an octet boundary (/8, /16, /24), the "interesting octet" is treated as a full host octet, since its block size is 256.
 
 For example:
 
-If the network ID is 1.0.0.0/8 and the block size is 256 then:
-There are 3 host only octets so:
+If the network ID is 1.0.0.0/8 and the block size is 256 then the last 3 octets are entirely host bits.
 256 * 256 * 256 = 16,777,216 = total addresses
 
-If the network ID is 10.128.0.0/9 and the block size is 128 then:
-There are 2 host only octets so:
+If the network ID is 10.128.0.0/9 and the block size is 128 then the last 2 octets are entirely host bits.
 128 * 256 * 256 = 8,388,608 = total addresses
 
-If the network ID is 172.17.36.0/22 and the block size is 4 then:
+If the network ID is 172.17.36.0/22 and the block size is 4 then the last octet is entirely host bits.
 There is 1 host only octets so:
 4 * 256 = 1,024 = total addresses
 
-If the network ID is 192.168.0.0/26 and the block size is 64 then:
-There are 0 host only octets so:
+If the network ID is 192.168.0.0/26 and the block size is 64 then there are no full host octets.
 64 = total addresses
 
-For {self.netIDStr}/{self.prefixLen} with a block size of {self.blockSize}:
-There {'are' if numHostOctets != 1 else 'is'} {numHostOctets} host only octet{'s' if numHostOctets != 1 else ''} so:""")
+For the network {self.netIDStr}/{self.prefixLen}, with a block size of {self.blockSize}, {message}.""")
+
         if numHostOctets == 0:
             print(f"{self.blockSize:,d} = total addresses")
         else:
             print(f"{self.blockSize}{' * 256' * numHostOctets} = {self.blockSize * 256**numHostOctets:,d} = total addresses")
 
             print(f"""
-If you need to estimate the total number of hosts and don't need an exact value, you can do this with the block method without resorting to exponents. Note that the prefix-length method is usually easier for estimation. This is just an alternative approach.
+If you need to estimate the total number of hosts and don't require an exact value, you can use this block-based method instead of working with exponents. The prefix-length method is usually simpler for quick estimates, but this provides an alternative way to approach the problem.
 
-This method works directly with the factors in the subnet size. Subnet sizes are always products of numbers that can be broken into factors of 2, which allows you to rearrange factors to create easier-to-multiply numbers.
+This method works directly with the factors that make up the subnet size. Since subnet sizes are powers of 2, they can always be broken down into factors of 2. These factors can then be rearranged to form numbers that are easier to work with mentally.
 
-Each full octet contributes a factor of 256. Since 256 * 4 = 1024 (which is close to 1000), the goal is to take two factors of 2 from other parts of the equation and combine them with each 256 to turn it into about 1000. In other words, each 256 needs two additional factors of 2 to become about 1000.
+Each octet that is entirely host bits contributes a factor of 256. Since 256 * 4 = 1024 (which is close to 1000), the idea is to take two factors of 2 from elsewhere in the expression and combine them with each 256 to turn it into approximately 1000. In other words, each 256 needs two additional factors of 2 to become about 1000.
 
-Note: This does not change the value, as you are only rearranging factors. The only change in value comes from rounding 1024 down to 1000.
+Note: rearranging factors does not change the value. The change comes from rounding 1024 down to 1000.
 
-For example, if you have a block size of 64 with two full host octets:
+For example, to estimate the number of address for the network 10.0.0.0/10, with a block size of 64, the last 2 octets are entirely host bits (0.0.0):
 64 * 256 * 256
 
 64 = 2 * 2 * 2 * 2 * 2 * 2
@@ -1856,7 +1871,7 @@ As another example, if you have a block size of 2 with two full host octets:
 2 * 256 * 256
 
 2 = 2
-256 = 2 * 2 * 2 * 2 * 2 * 2 * 2
+256 = 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2
 
 Take 2 factors of 2 (1 from 2, 1 from 256) and move them to the 1 256 term:
 
@@ -1869,82 +1884,94 @@ Remaining:
 Final estimate:
 128 * 1000 = 128,000
 
-""")
+For the network {self.netIDStr}/{self.prefixLen}, with a block size of {self.blockSize}, the last {numHostOctets} octet{'s' if numHostOctets != 1 else ''} are entirely host bits ({('0.' * numHostOctets)[:-1]}):""")
 
-            print(f"For {self.netIDStr}/{self.prefixLen} with a block size of {self.blockSize} and {numHostOctets} full host octet{'s' if numHostOctets != 1 else ''}:")
-            blockSizeFactors = []
-            hostOctetFactors = []
+            takenFromBlock = 0
+            takenFrom256 = 0
+
+            # index 0 is for blockSize
+            powers = [0] + [8] * numHostOctets
+
+            # get blockSize factors of 2
             num = self.blockSize
             while num != 1:
-                hostOctetFactors.append(2)
-                num /= 2
+                powers[0] += 1
+                num //= 2
 
-            factorsNeeded = numHostOctets * 2
+            # distribute block pool (powers[0]) into host octets (right to left) until they are 2^10 or blockSize factors runs out
+            takenFromBlock += self._distribute(powers, 0, 0)
 
-            if len(hostOctetFactors) / 4 < numHostOctets:
-                factorsNeeded -= 2
-                num = 256
-                while num != 1:
-                    blockSizeFactors.append(2)
-                    num /= 2
+            # Rebalance from first host octet (powers[1]) to maximize number of 2^10-sized octets
+            takenFrom256 += self._distribute(powers, 1, 1)
 
-            hostRemoved = 0
-            blockRemoved = 0
-            temp = hostOctetFactors.copy()
-            while len(temp) > 0 and factorsNeeded > 0:
-                if len(temp) == 0:
-                    break
-                del temp[0]
-                factorsNeeded -= 1
-                hostRemoved += 1
+            totalTaken = takenFromBlock + takenFrom256
+            upgradedOctets = 0
+            for i in powers[1:]:
+                if i > 8: # larger than original size
+                    upgradedOctets += 1
 
-            if len(temp) == 0:
-                temp = blockSizeFactors.copy()
-                while factorsNeeded > 0:
-                    del temp[0]
-                    factorsNeeded -= 1
-                    blockRemoved += 1
+            takeLine = f"Take {totalTaken} factor{'s' if totalTaken != 1 else ''} of 2 "
 
-            print(f"{self.blockSize}{' * 256' * numHostOctets}\n")
-            print(f"{self.blockSize} = {' * '.join(str(j) for j in hostOctetFactors)}")
-            if blockRemoved > 0:
-                print(f"256 = {' * '.join(str(j) for j in blockSizeFactors)}")
-                thousandLines = '256 * 2 * 2 = 1024 or approx. 1000\n' * (numHostOctets - 1)
-                print(f"""
-Take {hostRemoved + blockRemoved} factor{'s' if factorsNeeded != 1 else ''} of 2 ({hostRemoved} from {self.blockSize}, {blockRemoved} from 256) and move them to the {numHostOctets - 1} 256 term{'s' if numHostOctets - 1 != 1 else ''}:
+            factorsFromBorrowedNumbers = f"{self.blockSize} = {('2 * ' * (powers[0] + takenFromBlock))[:-3]}"
+
+            if takenFrom256 > 0:
+                takeLine += f"({takenFromBlock} from {self.blockSize}, {takenFrom256} from 256)"
+                factorsFromBorrowedNumbers += "\n256 = 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2"
+            else:
+                takeLine += f"(all from {self.blockSize})"
+
+            takeLine += f" and move them to the {upgradedOctets} 256 term{'s' if upgradedOctets != 1 else ''}:"
+
+            factors = [2 ** powers[0]]
+            thousandLines = ""
+
+            for i, p in enumerate(powers[1:]):
+                value = 2 ** p
+                if p > 8:
+                    line = "256" + " * 2" * (p - 8)
+                    if p == 10:
+                        factors.append(1000)
+                        thousandLines += f"{line} = {value} or approx. 1000\n"
+                    else:
+                        factors.append(value)
+                        thousandLines += f"{line} = {value}\n"
+                else:
+                    factors.append(value)
+
+            remainingLines = "Remaining:\n"
+
+            if takenFromBlock > 1:
+                remainingLines += f"{self.blockSize} / ({('2 * ' * takenFromBlock)[:-3]}) = {self.blockSize // (2 ** takenFromBlock)}"
+            elif takenFromBlock == 1:
+                remainingLines += f"{self.blockSize} / 2 = {self.blockSize // 2}"
+
+            if takenFrom256 > 1:
+                remainingLines += f"\n256 / ({('2 * ' * takenFrom256)[:-3]}) = {256 // (2 ** takenFrom256)}"
+            elif takenFrom256 == 1:
+                remainingLines += "\n256 / 2 = 128"
+            elif powers[1] == 8: # since the estimation code has > 0 numHostOctets, don't need to worry about IndexError Exception
+                remainingLines += "\n256"
+
+            estimateLines = "Final estimate:\n"
+
+            total = 1
+            for i in factors:
+                total *= i
+                if i > 1:
+                    estimateLines += f"{i} * "
+
+            estimateLines = estimateLines[:-2] + f"= {total:,d}"
+
+            print(f"""{self.blockSize}{' * 256' * numHostOctets}
+
+{factorsFromBorrowedNumbers}
+
+{takeLine}
 
 {thousandLines}
-Remaining:""")
+{remainingLines}
 
-            else:
-                thousandLines = '256 * 2 * 2 = 1024 or approx. 1000\n' * (numHostOctets)
-                print(f"""
-Take {hostRemoved + blockRemoved} factor{'s' if hostRemoved != 1 else ''} of 2 (all from {self.blockSize}) and move them to the {numHostOctets} 256 term{'s' if numHostOctets != 1 else ''}:
-
-{thousandLines}
-Remaining:""")
-
-            hostRemovedStr = " 2 = 1"
-            if hostRemoved > 1:
-                hostRemovedStr = '2 * ' * hostRemoved
-                hostRemovedStr = hostRemovedStr.rstrip(' ').rstrip('*').rstrip(' ')
-                hostRemovedStr = f" ({hostRemovedStr}) = {2**(len(hostOctetFactors) - hostRemoved)}"
-            if blockRemoved > 0:
-                blockRemovedStr = " 2 = 1"
-                if blockRemoved > 1:
-                    blockRemovedStr = '2 * ' * blockRemoved
-                    blockRemovedStr = blockRemovedStr.rstrip(' ').rstrip('*').rstrip(' ')
-                    blockRemovedStr = f" ({blockRemovedStr}) = {2**(8 - blockRemoved)}"
-                print(f"""{self.blockSize} /{hostRemovedStr}
-256 /{blockRemovedStr}
-
-Final estimate:
-{2**(8 - blockRemoved)}{' * 1000' * (numHostOctets - 1)} = {2**(8 - blockRemoved) * 1000**(numHostOctets - 1):,d}""")
-            else:
-                print(f"""{self.blockSize} /{hostRemovedStr}
-
-Final estimate:
-{2**(len(hostOctetFactors) - hostRemoved)}{' * 1000' * numHostOctets} = {2**(len(hostOctetFactors) - hostRemoved) * 1000**numHostOctets:,d}""")
+{estimateLines}""")
 
         assert self.blockSize * 256**numHostOctets == self.totalAddresses
 
