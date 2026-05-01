@@ -146,7 +146,7 @@ Where `<address>` is the IPv4 address in one of several supported formats, and o
   Constrains the displayed subnet enumeration range to an octet-aligned window for visualization purposes. This does not change subnet size, block size, or calculation logic, only the range of subnets that are iterated and shown.
 
 * `--supernet`
-  Prints the CIDR notation of the supernet network ID.
+  Prints the CIDR notation of the supernet network address.
 
 ---
 
@@ -176,7 +176,7 @@ python cli.py 192.168.1.10/24 --subnet 28
 python cli.py 10.0.0.0/8 --subnet 24 --octet-boundary
 ```
 
-**Show supernet network ID for a given prefix:**
+**Show supernet network address for a given prefix:**
 
 ```bash
 python cli.py 192.168.1.10/24 --supernet 16
@@ -330,9 +330,9 @@ Updates all calculations automatically in real time.
 Displays detailed computed information for the selected IP, including:
 
 * Subnet mask
-* CIDR Prefix Length
-* Host Mask
-* Network ID
+* CIDR prefix length
+* Host mask
+* Network address
 * Broadcast address
 * First and last usable host
 * Total addresses and usable hosts
@@ -343,7 +343,7 @@ Displays detailed computed information for the selected IP, including:
 
 Provides subnet breakdowns based on the selected prefix length:
 
-* Network IDs
+* Network addresses
 * Usable host ranges
 * Broadcast addresses
 
@@ -364,7 +364,7 @@ from IPv4Address import IPv4Address
 ip = IPv4Address("192.168.1.10/24")
 
 # Print subnet information
-print(f"Network ID: {ip.netIDStr}")
+print(f"Network Address: {ip.netAdrStr}")
 print(f"Broadcast Address: {ip.broadcastStr}")
 print(f"First Host: {ip.firstHost}")
 print(f"Last Host: {ip.lastHost}")
@@ -434,27 +434,29 @@ Note: These checks are primarily intended for development and debugging.
 Below is the output when running `python cli.py 172.30.197.10/19`
 
 ```text
-IPv4 Address:  172.30.197.10
-Subnet Mask:   255.255.224.0
-Prefix Length: 19
+IPv4 Address:                    172.30.197.10
+Subnet Mask:                     255.255.224.0
+Host Mask (Inverse Subnet Mask): 0.0.31.255
+Prefix Length:                   19
 
-Network ID:        172.30.192.0
+Network address:   172.30.192.0
 Broadcast Address: 172.30.223.255
 
-First Host:   172.30.192.1
-Last Host:    172.30.223.254
-Total Hosts:  8,192
-Usable Hosts: 8,190
+First Host:      172.30.192.1
+Last Host:       172.30.223.254
+Total Addresses: 8,192
+Usable Hosts:    8,190
 
-Host (CIDR):    172.30.197.10/19
-Network (CIDR): 172.30.192.0/19
+IP Address (CIDR):      172.30.197.10/19
+Network Address (CIDR): 172.30.192.0/19
 
 Binary (IPv4 Address):      10101100 00011110 11000101 00001010
 Binary (Subnet Mask):       11111111 11111111 11100000 00000000
-Binary (Network ID):        10101100 00011110 11000000 00000000
+Binary (Host Mask):         00000000 00000000 00011111 11111111
+Binary (Network address):   10101100 00011110 11000000 00000000
 Binary (Broadcast Address): 10101100 00011110 11011111 11111111
 
-Address Class (Historical):                       B
+Address Class (Historical):                       Class B
 Private Address, Non-Publicly Routable (RFC1918): True
 Link-Local Address, Non-Routable (RFC3927):       False
 Multicast:                                        False
@@ -477,43 +479,44 @@ Subnet Mask
 255.255.224.0 -> 255, 255, 224, 0 -> 11111111 11111111 11100000 00000000
 
 CIDR Prefix Length -> Subnet Mask (binary)
-172.30.197.10/19 -> 19 -> 11111111 11111111 111  -> 11111111 11111111 11100000 00000000
+172.30.197.10/19 -> 19 -> 11111111 11111111 111 -> 11111111 11111111 11100000 00000000
 
-Network ID
- IP address:   10101100 00011110 11000101 00001010
-Subnet mask: & 11111111 11111111 11100000 00000000
-               -----------------------------------
- Network ID:   10101100 00011110 11000000 00000000
+Host Mask
+Subnet mask:                      11111111 11111111 11100000 00000000
+Host mask (inverted subnet mask): 00000000 00000000 00011111 11111111
+
+Network Address
+     IP address:   10101100 00011110 11000101 00001010
+    Subnet mask: & 11111111 11111111 11100000 00000000
+                   -----------------------------------
+Network address:   10101100 00011110 11000000 00000000
 
 Broadcast
-Subnet mask:   11111111 11111111 11100000 00000000
-   All Ones: ^ 11111111 11111111 11111111 11111111
-               -----------------------------------
-  Host mask:   00000000 00000000 00011111 11111111
- Network ID: | 10101100 00011110 11000000 00000000
-               -----------------------------------
-  Broadcast:   10101100 00011110 11011111 11111111
+      Host mask:   00000000 00000000 00011111 11111111
+Network address: | 10101100 00011110 11000000 00000000
+                   -----------------------------------
+      Broadcast:   10101100 00011110 11011111 11111111
 
 First Host
-Network ID:   10101100 00011110 11000000 00000000
-            + 00000000 00000000 00000000 00000001
-              -----------------------------------
-First Host:   10101100 00011110 11000000 00000001
+Network address:   10101100 00011110 11000000 00000000
+                 + 00000000 00000000 00000000 00000001
+                   -----------------------------------
+     First Host:   10101100 00011110 11000000 00000001
 
-Last Host:
+Last Host
 Broadcast:   10101100 00011110 11011111 11111111
            - 00000000 00000000 00000000 00000001
              -----------------------------------
 Last Host:   10101100 00011110 11011111 11111110
 
-Total Hosts:
- Broadcast:   10101100 00011110 11011111 11111111
-Network ID: - 10101100 00011110 11000000 00000000
-              -----------------------------------
-              00000000 00000000 00011111 11111111
-     Add 1: + 00000000 00000000 00000000 00000001
-              -----------------------------------
-Total Hosts:  00000000 00000000 00100000 00000000
+Total Addresses
+      Broadcast:   10101100 00011110 11011111 11111111
+Network address: - 10101100 00011110 11000000 00000000
+                   -----------------------------------
+                   00000000 00000000 00011111 11111111
+          Add 1: + 00000000 00000000 00000000 00000001
+                   -----------------------------------
+Total Addresses:   00000000 00000000 00100000 00000000
 
 IP Address
 172.30.197.10
@@ -521,7 +524,10 @@ IP Address
 Subnet Mask
 11111111 11111111 11100000 00000000 -> 255.255.224.0
 
-Network ID
+Host Mask
+00000000 00000000 00011111 11111111 -> 0.0.31.255
+
+Network Address
 10101100 00011110 11000000 00000000 -> 172.30.192.0
 
 Broadcast
@@ -530,22 +536,28 @@ Broadcast
 First Host
 10101100 00011110 11000000 00000001 -> 172.30.192.1
 
-Last Host:
+Last Host
 10101100 00011110 11011111 11111110 -> 172.30.223.254
 
-Total Hosts:
-00000000 00000000 00100000 00000000 -> 8192
+Total Addresses
+00000000 00000000 00100000 00000000 -> 8,192
 
-Usable Hosts:
-8192 - 2 = 8190
+Usable Hosts
+8192 - 2 = 8,190
 
 Block size steps for 172.30.197.10/19
 
 Block Size
 172.30.197.10/19 -> 19 -> 5 host bits in octet 3 (the interesting octet) -> block size = 2^5 = 32
 
-Network ID
-Octet 3 value for network ID = 197 // 32 * 32 -> 192
+Host Mask
+All ones:      255.255.255.255
+Subnet mask: - 255.255.224.0
+               ---------------
+Host mask:     0.0.31.255
+
+Network address
+Octet 3 value for network address = 197 // 32 * 32 -> 192
 Octet 3 value set to 192 and all octets to the right of it set to 0 -> 172.30.192.0
 
 Broadcast Address
@@ -557,11 +569,11 @@ First Host
 Last Host
 172.30.223.255 - 1 = 172.30.223.254
 
-Total Hosts
-172.30.197.10/19 -> 19 -> 32 - 19 = 13 -> 2^13 = 8192 total hosts
+Total Addresses
+172.30.197.10/19 -> 19 -> 32 - 19 = 13 -> 2^13 = 8,192 total addresses
 
 Usable Hosts
-8192 - 2 = 8190
+8,192 - 2 = 8,190
 ```
 
 ---
@@ -572,40 +584,42 @@ Below are small snippets of output when running `python cli.py 172.30.197.10/19 
 
 ```text
 Step 2: Convert the subnet mask to binary.
+
 If this is in dotted-decimal notation already (255.255.224.0) then repeat everything in step 1. If the subnet mask was provided as a prefix length (19) from CIDR notation (172.30.197.10/19) then simply write out 19 '1's (prefix length) and 13 '0's (32 - 19 = 13).
 11111111 11111111 11100000 00000000
 
-Step 3: Calculate the network ID using the IP address and subnet mask.
-This is done using a binary operation called bitwise AND (&). If both bits equal 1, the network ID bit is set to 1. Otherwise, the network ID is set to 0
+Step 4: Calculate the network address using the IP address and subnet mask.
 
- IP address:   10101100 00011110 11000101 00001010
-Subnet mask: & 11111111 11111111 11100000 00000000
-               -----------------------------------
- Network ID:   10101100 00011110 11000000 00000000
+This is done using a binary operation called bitwise AND (&). If both bits equal 1, the network address bit is set to 1. Otherwise, the network address is set to 0
 
-Method 1: compute the total hosts using the block size
+     IP address:   10101100 00011110 11000101 00001010
+    Subnet mask: & 11111111 11111111 11100000 00000000
+                   -----------------------------------
+Network address:   10101100 00011110 11000000 00000000
 
-This method involves taking the known block size 32 and multiplying it by 256 for each octet with only host bits in the network ID 172.30.192.0. For prefixes that fall on an octet boundary (/8, /16, /24), the "interesting octet" is just treated as another host bits octet.
+Method 1: compute the total number of addresses using the block size
+
+This method uses the block size and multiplies it by 256 for each octet that consists entirely of host bits in the network address.
+
+For prefixes that fall on an octet boundary (/8, /16, /24), the "interesting octet" is treated as a full host octet, since its block size is 256.
 
 For example:
 
-If the network ID is 1.0.0.0/8 and the block size is 256 then:
-There are 3 host only octets so:
-256 * 256 * 256 = 16777216 = total hosts
+If the network address is 1.0.0.0/8 and the block size is 256 then the last 3 octets are entirely host bits.
+256 * 256 * 256 = 16,777,216 = total addresses
 
-For 172.30.192.0/19 with a block size of 32:
-There are 1 host only octet so:
-32 * 256 = 8192 = total hosts
+For the network 172.30.192.0/19, with a block size of 32, the last octet is entirely host bits (0).
+32 * 256 = 8,192 = total addresses
 
-If you need to estimate the total number of hosts and don't need an exact value, you can do this with the block method without resorting to exponents. Note that the prefix-length method is usually easier for estimation. This is just an alternative approach.
+If you need to estimate the total number of hosts and don't require an exact value, you can use this block-based method instead of working with exponents. The prefix-length method is usually simpler for quick estimates, but this provides an alternative way to approach the problem.
 
-This method works directly with the factors in the subnet size. Subnet sizes are always products of numbers that can be broken into factors of 2, which allows you to rearrange factors to create easier-to-multiply numbers.
+This method works directly with the factors that make up the subnet size. Since subnet sizes are powers of 2, they can always be broken down into factors of 2. These factors can then be rearranged to form numbers that are easier to work with mentally.
 
-Each full octet contributes a factor of 256. Since 256 * 4 = 1024 (which is close to 1000), the goal is to take two factors of 2 from other parts of the equation and combine them with each 256 to turn it into about 1000. In other words, each 256 needs two additional factors of 2 to become about 1000.
+Each octet that is entirely host bits contributes a factor of 256. Since 256 * 4 = 1024 (which is close to 1000), the idea is to take two factors of 2 from elsewhere in the expression and combine them with each 256 to turn it into approximately 1000. In other words, each 256 needs two additional factors of 2 to become about 1000.
 
-Note: This does not change the value, as you are only rearranging factors. The only change in value comes from rounding 1024 down to 1000.
+Note: rearranging factors does not change the value. The change comes from rounding 1024 down to 1000.
 
-For example, if you have a block size of 64 with two full host octets:
+For example, to estimate the number of address for the network 10.0.0.0/10, with a block size of 64, the last 2 octets are entirely host bits (0.0.0):
 64 * 256 * 256
 
 64 = 2 * 2 * 2 * 2 * 2 * 2

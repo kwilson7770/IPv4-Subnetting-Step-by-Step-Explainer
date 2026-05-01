@@ -100,12 +100,12 @@ class SubnetGUI:
         self.labels = {}
 
         fields = [
-            "ipStr", "cidrAdr", "ipBin",
-            "netmaskStr", "netIDCIDR", "netmaskBin",
+            "ipStr", "ipAdrCIDR", "ipBin",
+            "netmaskStr", "netAdrCIDR", "netmaskBin",
             "hostmaskStr", "ipInt", "hostmaskBin",
-            "prefixLen", "netmaskInt", "netIDBin",
-            "netIDStr", "hostmaskInt", "broadcastBin",
-            "broadcastStr", "netIDInt", "reserved",
+            "prefixLen", "netmaskInt", "netAdrBin",
+            "netAdrStr", "hostmaskInt", "broadcastBin",
+            "broadcastStr", "netAdrInt", "reserved",
             "firstHost", "broadcastInt", "loopback",
             "lastHost", "privateUse", "limitedBroadcast",
             "totalAddresses", "linkLocal", "adrClassStr",
@@ -114,11 +114,11 @@ class SubnetGUI:
 
         fieldLabels = [
             "IP Address", "IP Address CIDR", "IP Address Binary",
-            "Subnet Mask", "Network ID CIDR", "Subnet Mask Binary",
+            "Subnet Mask", "Network Address CIDR", "Subnet Mask Binary",
             "Host Mask", "IP Address Int", "Host Mask Binary",
-            "Prefix Length", "Subnet Mask Int", "Network ID Binary",
-            "Network ID", "Host Mask Int", "Broadcast Binary",
-            "Broadcast", "Network ID Int", "Reserved Address",
+            "Prefix Length", "Subnet Mask Int", "Network Address Binary",
+            "Network Address", "Host Mask Int", "Broadcast Binary",
+            "Broadcast", "Network Address Int", "Reserved Address",
             "First Host", "Broadcast Int", "Loopback",
             "Last Host", "Private Use", "Limited Broadcast",
             "Total Addresses", "Link Local", "Legacy Class",
@@ -148,7 +148,7 @@ class SubnetGUI:
         self.table = ttk.Treeview(self.tableFrame, columns=columns, show="headings", height=12)
         self.table.grid(row=0, column=0, sticky="nsew")
 
-        for col, text in (("Network", "Network ID"), ("HostRange", "Usable Host Range"), ("Broadcast", "Broadcast")):
+        for col, text in (("Network", "Network Address"), ("HostRange", "Usable Host Range"), ("Broadcast", "Broadcast")):
             self.table.heading(col, text=text, command=lambda c=col: self.sortColumn(c, True))
             self.table.column(col, anchor="center", width=180)
 
@@ -314,7 +314,7 @@ class SubnetGUI:
             5 = integer only
             0 = unknown
         """
-        if address == f"{self.ip.cidrAdr}":
+        if address == f"{self.ip.ipAdrCIDR}":
             return 1
         elif address == f"{self.ip.ipStr}":
             return 2
@@ -382,7 +382,7 @@ class SubnetGUI:
 
             for i, ip in enumerate(self.ip.subnets(newPrefix, limit=4096, subnetByOctetBoundary=self.useOctetBoundary)):
                 tag = "even" if i % 2 == 0 else "odd"
-                self.table.insert("", "end", values=(ip.netIDCIDR, f"{ip.firstHost} - {ip.lastHost}", ip.broadcastStr), tags=(tag,))
+                self.table.insert("", "end", values=(ip.netAdrCIDR, f"{ip.firstHost} - {ip.lastHost}", ip.broadcastStr), tags=(tag,))
 
             if self.useOctetBoundary:
                 self.tableFrame.configure(text=f"{len(self.table.get_children()):,d} Subnets ({self.mode})")
@@ -409,7 +409,7 @@ class SubnetGUI:
         if newPrefix < self.ip.prefixLen:
             self.supernetIP = IPv4Address(f"{self.ip.ipStr}/{newPrefix}")
 
-            self.supernetLabel.config(text=f"Supernet: {self.supernetIP.netIDCIDR} | Usable Host Range: {self.supernetIP.firstHost} - {self.supernetIP.lastHost} | Broadcast: {self.supernetIP.broadcastStr}")
+            self.supernetLabel.config(text=f"Supernet: {self.supernetIP.netAdrCIDR} | Usable Host Range: {self.supernetIP.firstHost} - {self.supernetIP.lastHost} | Broadcast: {self.supernetIP.broadcastStr}")
 
     def sortColumn(self, col, reverse):
         data = []
@@ -513,7 +513,7 @@ class SubnetGUI:
             with open(filePath, mode="w", newline="") as f:
                 writer = csv.writer(f)
 
-                writer.writerow(["Network ID", "Usable Host Range", "Broadcast"])
+                writer.writerow(["Network Address", "Usable Host Range", "Broadcast"])
 
                 for row in self.table.get_children():
                     writer.writerow(self.table.item(row)["values"])

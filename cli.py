@@ -85,14 +85,14 @@ or an integer of an IPv4 address (e.g. 1157895235)."""
         print(f"Subnets with a /{args.subnet} prefix:")
 
         for subnet in ip.subnets(args.subnet, args.subnet_limit, subnetByOctetBoundary):
-            print(f"  - {subnet.netIDStr}/{subnet.prefixLen}")
+            print(f"  - {subnet.netAdrStr}/{subnet.prefixLen}")
 
         print("")
 
     if args.supernet:
         supernet = ip.supernet(args.supernet)
         print(f"""Supernet with a /{args.supernet} prefix:
-  - {supernet.netIDStr}/{supernet.prefixLen}
+  - {supernet.netAdrStr}/{supernet.prefixLen}
 
 Supernet Info
 
