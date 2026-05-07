@@ -60,9 +60,9 @@ or an integer of an IPv4 address (e.g. 1157895235)."""
     parser.add_argument(
         "--supernet",
         type=int,
-        choices=range(1, 33),
-        metavar="[1-32]",
-        help="Target CIDR prefix length for supernet generation (1-32)"
+        choices=range(0, 32),
+        metavar="[0-31]",
+        help="Target CIDR prefix length for supernet generation (0-31)"
     )
 
     args = parser.parse_args()

@@ -24,7 +24,7 @@ It is designed to help you understand subnetting rather than just memorize formu
 * Multiple input formats supported
 * Built-in validation checks
 * Beginner-friendly output
-* /31 and /32 networks are handled according to RFC behavior (/31 for point-to-point, /32 as single-host)
+* /31 and /32 networks are handled according to RFC behavior (/31 for point-to-point, /32 as host route)
 * Input validation is performed for supported formats
 
 Unlike traditional subnet calculators, this tool focuses on understanding the process, not just producing results.
@@ -416,7 +416,7 @@ Note: These checks are primarily intended for development and debugging.
 ## Notes on Edge Cases
 
 * `/31` networks follow RFC 3021 (point-to-point links)
-* `/32` represents a single host and cannot be subnetted further in this tool
+* `/32` represents a host route per RFC 4632 and cannot be subnetted further in this tool
 
 ---
 

@@ -80,13 +80,13 @@ class SubnetGUI:
         ttk.Label(top, text="Subnet").grid(row=2, column=1, sticky="w", padx=(0, 3))
         ttk.Label(top, text="Supernet").grid(row=3, column=1, sticky="w", padx=(0, 3))
 
-        self.prefixSlider = tk.Scale(top, from_=1, to=32, orient="horizontal", command=self.updatePrefix)
+        self.prefixSlider = tk.Scale(top, from_=0, to=32, orient="horizontal", command=self.updatePrefix)
         self.prefixSlider.grid(row=1, column=2, sticky="ew")
 
-        self.subnetSlider = tk.Scale(top, from_=1, to=32, orient="horizontal", command=self.subnet)
+        self.subnetSlider = tk.Scale(top, from_=0, to=32, orient="horizontal", command=self.subnet)
         self.subnetSlider.grid(row=2, column=2, sticky="ew")
 
-        self.supernetSlider = tk.Scale(top, from_=1, to=32, orient="horizontal", command=self.supernet)
+        self.supernetSlider = tk.Scale(top, from_=0, to=32, orient="horizontal", command=self.supernet)
         self.supernetSlider.grid(row=3, column=2, sticky="ew")
 
         self.octetVar = tk.BooleanVar()
@@ -282,7 +282,7 @@ class SubnetGUI:
 
             # If user selects invalid value (supernet size larger than or equal to current prefix), snap slider back to minimum valid prefix
             if self.supernetSlider.get() >= ip.prefixLen:
-                self.supernetSlider.set(max(self.ip.prefixLen - 1, 1))
+                self.supernetSlider.set(max(self.ip.prefixLen - 1, 0))
 
             self.subnet(self.subnetSlider.get())
             self.supernet(self.supernetSlider.get())
@@ -350,7 +350,7 @@ class SubnetGUI:
         if not self.ip:
             return
 
-        # /32 cannot be subnetted further (single host)
+        # /32 cannot be subnetted further (host route)
         if self.ip.prefixLen == 32:
             self.subnetSlider.configure(state="disabled")
             self.clearTable()
@@ -391,8 +391,8 @@ class SubnetGUI:
         if not self.ip:
             return
         
-        # /1 cannot be supernetted further (largest possible network)
-        if self.ip.prefixLen == 1:
+        # /0 cannot be supernetted further (largest possible network)
+        if self.ip.prefixLen == 0:
             self.supernetSlider.configure(state="disabled")
             self.supernetLabel.config(text="Supernet: N/A")
             return
@@ -403,7 +403,7 @@ class SubnetGUI:
 
         # Ensure supernet prefix is smaller than current prefix
         if newPrefix >= self.ip.prefixLen:
-            self.supernetSlider.set(max(self.ip.prefixLen - 1, 1))
+            self.supernetSlider.set(max(self.ip.prefixLen - 1, 0))
             return
 
         if newPrefix < self.ip.prefixLen:
