@@ -130,7 +130,7 @@ class IPv4Address:
         self.lastHost = self.ipStr
 
     def _setup_point_to_point(self):
-        # point-to-point link (/31). According to RFC3021, the network address (first host) and broadcast address (last host) are both treated as usable hosts.
+        # point-to-point link (/31). According to RFC 3021, the network address (first host) and broadcast address (last host) are both treated as usable hosts.
 
         # sets the network address to be the first IP address in a network
         self._set_network_address()
@@ -426,10 +426,10 @@ class IPv4Address:
         return IPv4Address(f"{supernetAdrInt} /{newPrefix}", self.showSteps)
 
     def __str__(self):
-        return f"""IPv4 Address:                    {self.ipStr}
-Subnet Mask:                     {self.netmaskStr}
-Host Mask (Inverse Subnet Mask): {self.hostmaskStr}
-Prefix Length:                   {self.prefixLen}
+        return f"""IPv4 Address:  {self.ipStr}
+Subnet Mask:   {self.netmaskStr}
+Host Mask:     {self.hostmaskStr}
+Prefix Length: {self.prefixLen}
 
 Network address:   {self.netAdrStr}
 Broadcast Address: {self.broadcastStr}
@@ -448,16 +448,16 @@ Binary (Host Mask):         {self.hostmaskBin}
 Binary (Network Address):   {self.netAdrBin}
 Binary (Broadcast Address): {self.broadcastBin}
 
-Address Class (Historical):                       {self.adrClassStr}
-Private Address, Non-Publicly Routable (RFC1918): {self.privateUse}
-Link-Local Address, Non-Routable (RFC3927):       {self.linkLocal}
-Multicast:                                        {self.multicast}
-Loopback:                                         {self.loopback}
+Address Class (Historical):                        {self.adrClassStr}
+Private Address, Non-Publicly Routable (RFC 1918): {self.privateUse}
+Link-Local Address, Non-Routable (RFC 3927):       {self.linkLocal}
+Multicast:                                         {self.multicast}
+Loopback:                                          {self.loopback}
 """
 
     def _print_steps(self):
         if self.prefixLen == 32:
-            print("""Per RFC4632, a /32 is a host route.
+            print("""Per RFC 4632, a /32 is a host route.
 
 A host route represents a single IP address, not a range. That means:
 - Network address = the IP address itself
@@ -472,7 +472,7 @@ Since there is only one address, it is not necessary to perform calculations to 
             return
 
         elif self.prefixLen == 31:
-            print("""Per RFC3021, a /31 is a point-to-point link.
+            print("""Per RFC 3021, a /31 is a point-to-point link.
 
 A /31 network contains exactly 2 IP addresses. Unlike most subnets:
 - Both addresses are usable
@@ -497,6 +497,9 @@ IP Address
 Subnet Mask
 {self.netmaskStr} -> {', '.join(self.netmaskStr.split('.'))} -> {self.netmaskBin}
 
+CIDR Prefix Length (from binary subnet mask)
+{self.netmaskBin} -> {self.netmaskBin.count('1')} 1s -> /{self.prefixLen}
+
 CIDR Prefix Length -> Subnet Mask (binary)
 {self.ipAdrCIDR} -> {self.prefixLen} -> {self.netmaskBin.replace('0','').rstrip(' ')}{' -> ' + self.netmaskBin if '0' in self.netmaskBin else ''}
 
@@ -519,7 +522,7 @@ Network address: | {self.netAdrBin}
         if self.prefixLen == 31:
             print(f"""
 First Host
-Since according to RFC3021 this is a point-to-point link (/31), the network address is the first host and the broadcast address is the last host.
+Since according to RFC 3021 this is a point-to-point link (/31), the network address is the first host and the broadcast address is the last host.
 Network address: {self.netAdrBin}
      First Host: {IPv4Address._space_out_binary_string(format(firstHost, '032b'))}
 
@@ -529,7 +532,7 @@ Last Host: {IPv4Address._space_out_binary_string(format(lastHost, '032b'))}""")
         elif self.prefixLen == 32:
             print(f"""
 First Host
-Since according to RFC4632 this is a host route (/32), the first and last host are both equal the IP address since the network size only allows a single address.
+Since according to RFC 4632 this is a host route (/32), the first and last host are both equal the IP address since the network size only allows a single address.
 IP Address: {self.ipBin}
 First Host: {IPv4Address._space_out_binary_string(format(firstHost, '032b'))}
 
@@ -604,6 +607,15 @@ Block size steps for {self.ipAdrCIDR}
 
 The prefix falls on an octet boundary (/0, /8, /16, /24), so there is no interesting octet.
 
+Subnet Mask/CIDR Prefix Length Lookup Table
+128=1, 192=2, 224=3, 240=4, 248=5, 252=6, 254=7, 255=8
+
+CIDR Prefix Length -> Subnet Mask
+{self.ipAdrCIDR} -> /{self.prefixLen} -> {', '.join(str(i.count('1')) for i in self.netmaskBin.split(' '))} -> {', '.join(self.netmaskStr.split('.'))} -> {self.netmaskStr}
+
+Subnet Mask to CIDR Prefix Length
+{self.netmaskStr} -> {', '.join(self.netmaskStr.split('.'))} -> {' + '.join(str(i.count('1')) for i in self.netmaskBin.split(' '))} = {self.netmaskBin.count('1')} -> /{self.prefixLen}
+
 Host Mask
 All ones:      255.255.255.255
 Subnet mask: - {self.netmaskStr}
@@ -636,6 +648,15 @@ Block size steps for {self.ipAdrCIDR}
 Block Size
 {self.ipAdrCIDR} -> {self.prefixLen} -> {8 - self.prefixLen % 8} host bits in octet {interestingOctet} (the interesting octet) -> block size = 2^{8 - self.prefixLen % 8} = {blockSize}
 
+Subnet Mask/CIDR Prefix Length Lookup Table
+128=1, 192=2, 224=3, 240=4, 248=5, 252=6, 254=7, 255=8
+
+CIDR Prefix Length -> Subnet Mask
+{self.ipAdrCIDR} -> /{self.prefixLen} -> {', '.join(str(i.count('1')) for i in self.netmaskBin.split(' '))} -> {', '.join(self.netmaskStr.split('.'))} -> {self.netmaskStr}
+
+Subnet Mask to CIDR Prefix Length
+{self.netmaskStr} -> {', '.join(self.netmaskStr.split('.'))} -> {' + '.join(str(i.count('1')) for i in self.netmaskBin.split(' '))} = {self.netmaskBin.count('1')} -> /{self.prefixLen}
+
 Host Mask
 All ones:      255.255.255.255
 Subnet mask: - {self.netmaskStr}
@@ -647,7 +668,7 @@ Octet {interestingOctet} value for network address = {octets[interestingOctet - 
 Octet {interestingOctet} value set to {int(octets[interestingOctet - 1]) // blockSize * blockSize} and all octets to the right of it set to 0 -> {self.netAdrStr}
 
 Broadcast Address
-Add {blockSize} to octet {interestingOctet} in {self.netAdrStr} and subtract 1 = {self.broadcastStr.split('.')[interestingOctet - 1]}. Then replace octets to the right of the interesting octet with 255 -> {self.broadcastStr}""")
+Add {blockSize} (block size) to octet {interestingOctet} in {self.netAdrStr} and subtract 1 = {self.broadcastStr.split('.')[interestingOctet - 1]}. Then replace octets to the right of the interesting octet with 255 -> {self.broadcastStr}""")
 
         if self.prefixLen >= 31:
              print(f"""
@@ -680,7 +701,7 @@ Usable Hosts
     def _explain_how_to_calculate(self):
         # Handle special cases first
         if self.prefixLen == 32:
-            print("""Per RFC4632, a /32 is a host route.
+            print("""Per RFC 4632, a /32 is a host route.
 
 A host route represents a single IP address, not a range. That means:
 - Network address = the IP address itself
@@ -691,7 +712,7 @@ Since there is only one address, it is not necessary to perform calculations to 
 """)
 
         elif self.prefixLen == 31:
-            print("""Per RFC3021, a /31 is a point-to-point link.
+            print("""Per RFC 3021, a /31 is a point-to-point link.
 
 A /31 network contains exactly 2 IP addresses. Unlike most subnets:
 - Both addresses are usable
@@ -739,7 +760,7 @@ Both methods will be gone through step-by-step so you can see how they work and 
 
         # Step 1: IP to Binary
         octets = self.ipStr.split('.')
-        print(f"Step 1: Convert the IP address {self.ipStr} to binary by splitting octets: {', '.join(octets)}\n")
+        print(f"Step 1: Convert the IP address {self.ipStr} to binary by splitting octets")
         self._show_binary_conversion_methods(octets)
 
         # Step 2: Subnet Mask
@@ -758,14 +779,17 @@ Both methods will be gone through step-by-step so you can see how they work and 
         self._show_first_last_host_calc()
 
         # Step 7: Total Addresses and Total Usable Hosts
-        self._show_calc_total_hosts()
+        self._show_calc_total_addresses()
 
         # Step 8: Convert binary addresses to dotted-decimal notation
         self._show_binary_to_dotted_decimal_notation()
 
     def _show_binary_conversion_methods(self, octets):
-        print(f"First you need to split the IP address into its four octets: {self.ipStr} -> {', '.join(octets)}")
-        print("Next, you need to convert each octet into binary. There are 2 primary methods to do this:\n1. Subtract Powers of 2\n2. Repeated Division by 2")
+        print(f"""
+First you need to split the IP address into its four octets: {self.ipStr} -> {', '.join(octets)}
+Next, you need to convert each octet into binary. There are 2 primary methods to do this:
+1. Subtract Powers of 2
+2. Repeated Division by 2""")
 
         # Method 1: Subtract Powers of 2
         self._show_method_subtract_powers(octets)
@@ -859,13 +883,54 @@ Method 1: Subtract Powers of 2
         assert " ".join(bins) == self.ipBin
 
     def _show_mask_to_binary(self):
-        print("\nStep 2: Convert the subnet mask to binary.\n")
-        print(f"If this is in dotted-decimal notation already ({self.netmaskStr}) then repeat everything in step 1. If the subnet mask was provided as a prefix length ({self.prefixLen}) from CIDR notation ({self.ipAdrCIDR}) then simply write out {self.prefixLen} '1's (prefix length) and {32 - self.prefixLen} '0's (32 - {self.prefixLen} = {32 - self.prefixLen}).")
+        print(f"""
+Step 2: Convert the subnet mask to binary.
 
+If this is in dotted-decimal notation already ({self.netmaskStr}) then repeat everything in step 1. Here is a compact version of method 1 from step 1:
+
+Subtract Powers of 2 (compact)
+""")
+        octets = self.netmaskStr.split(".")
+        bins = []
+        for octetNum, i in enumerate(octets):
+            subtraction = i
+            print(f"Octet {octetNum + 1} = {i}")
+            binStr = ""
+
+            i = int(i)
+            for j in reversed(range(8)):
+                j = 2**j
+                if i >= j:
+                    binStr += "1"
+                    subtraction += f" - {j}"
+                    i -= j
+                else:
+                    binStr += "0"
+
+            bins.append(binStr)
+            print(f"{subtraction} = 0")
+            print("\nThis results in:")
+            for j in binStr:
+                print(j + "    ", end="")
+
+            print("""
+2^7  2^6  2^5  2^4  2^3  2^2  2^1  2^0
+128  64   32   16   8    4    2    1
+""")
+
+        print(f"""Now combine each binary octet (in the original order of the IPv4 octets):
+{' '.join(bins)} == {self.netmaskStr}
+
+To calculate the CIDR Prefix Length from the binary subnet mask, count the number of 1s to get the prefix length.
+{' '.join(bins)} -> {' '.join(bins).count('1')} 1s -> /{' '.join(bins).count('1')}
+
+If the IP address is in CIDR notation ({self.ipAdrCIDR}) then simply write out {self.prefixLen} '1's (prefix length) and {32 - self.prefixLen} '0's (32 - {self.prefixLen} = {32 - self.prefixLen}).""")
+        
         netmask = '1' * self.prefixLen + '0' * (32 - self.prefixLen)
         print(IPv4Address._space_out_binary_string(netmask))
 
-        # Check my "work" with an assertion (the class uses a simpler calculation method that should have zero errors)
+        assert ' '.join(bins) == self.netmaskBin
+        assert ' '.join(bins).count('1') == self.prefixLen
         assert IPv4Address._space_out_binary_string(netmask) == self.netmaskBin
 
     def _show_hostmask_to_binary(self):
@@ -936,7 +1001,7 @@ Network address:   {IPv4Address._space_out_binary_string(format(self.ipInt & sel
         print(f"""
 Step 5: Calculate the broadcast address.
 
-To get the broadcast address, bitwise OR (|) the host mask ({self.hostmaskBin}) with the network address. If both bits equal 0, the broadcast bit is set to 0. Otherwise, the broadcast bit is set to 1.
+To get the broadcast address, bitwise OR (|) the host mask with the network address. If both bits equal 0, the broadcast bit is set to 0. Otherwise, the broadcast bit is set to 1.
 
        Host mask:   {IPv4Address._space_out_binary_string(format(self.netmaskInt ^ IPv4Address.ALL_ONES, '032b'))}
  Network address: | {self.netAdrBin}
@@ -957,7 +1022,7 @@ To get the broadcast address, bitwise OR (|) the host mask ({self.hostmaskBin}) 
 
         if self.prefixLen == 31:
             print(f"""
-Since according to RFC3021 this is a point-to-point link (/31), the network address is the first host and the broadcast address is the last host.
+Since according to RFC 3021 this is a point-to-point link (/31), the network address is the first host and the broadcast address is the last host.
 
 Network address: {self.netAdrBin}
      First Host: {IPv4Address._space_out_binary_string(format(firstHost, '032b'))}
@@ -966,7 +1031,7 @@ Network address: {self.netAdrBin}
       Last Host: {IPv4Address._space_out_binary_string(format(lastHost, '032b'))}""")
         elif self.prefixLen == 32:
             print(f"""
-Since according to RFC4632 this is a host route (/32), the first and last host are both equal the IP address since the network size only allows a single address.
+Since according to RFC 4632 this is a host route (/32), the first and last host are both equal the IP address since the network size only allows a single address.
 
 IP Address: {self.ipBin}
 First Host: {IPv4Address._space_out_binary_string(format(firstHost, '032b'))}
@@ -989,7 +1054,7 @@ Last Host:   {IPv4Address._space_out_binary_string(format(lastHost, '032b'))}"""
         assert IPv4Address.ip_string_from_int(firstHost) == self.firstHost
         assert IPv4Address.ip_string_from_int(lastHost) == self.lastHost
 
-    def _show_calc_total_hosts(self):
+    def _show_calc_total_addresses(self):
         print("\nStep 7: Calculate the total addresses available and total usable hosts.")
 
         print(f"""
@@ -998,12 +1063,12 @@ There are two methods to get the total addresses available:
 2. Raise 2 to the the host bits power.""")
 
         # Method 1: Take the broadcast and subtract the network address, then add 1. Afterwards, convert the binary to decimal.
-        self._method_subtract_and_add_to_get_total_hosts()
+        self._method_subtract_and_add_to_get_total_addresses()
 
         # Method 2: Raise 2 to the host bits power.
-        self._method_host_bits_exponent_total_hosts()
+        self._method_host_bits_exponent_total_addresses()
 
-    def _method_subtract_and_add_to_get_total_hosts(self):
+    def _method_subtract_and_add_to_get_total_addresses(self):
         print(f"""
 Method 1: Take the broadcast and subtract the network address, then add 1. Afterwards, convert the binary to decimal.
 
@@ -1013,7 +1078,7 @@ Network address: - {self.netAdrBin}
                    {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netAdrInt, '032b'))}
           Add 1: + 00000000 00000000 00000000 00000001
                    -----------------------------------
-                   {IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netAdrInt + 1, '032b'))}""")
+{str(IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netAdrInt + 1, '032b'))).rjust(54)}""")
 
         # Check my "work" with an assertion (the class uses a simpler calculation method that should have zero errors)
         assert self.broadcastInt - self.netAdrInt + 1 == self.totalAddresses
@@ -1037,7 +1102,6 @@ For {self.ipAdrCIDR}, since it has {self.totalAddresses:,d} total addresses, it 
 
 For {self.ipAdrCIDR}, since it has {self.totalAddresses:,d} total addresses, it has {self.totalAddresses:,d} - 2 = {self.totalAddresses - 2:,d} usable hosts.""")
 
-
         if self.prefixLen < 31:
             assert self.totalAddresses - 2 == self.usableHosts
         elif self.prefixLen >= 31:
@@ -1046,22 +1110,22 @@ For {self.ipAdrCIDR}, since it has {self.totalAddresses:,d} total addresses, it 
     def _show_binary_to_decimal(self):
         print(f"""
 Next, convert it to decimal (base 10). The rules of this conversion is slightly different than IP addresses because those are split into 4 equal chunks of 8 bits (1 byte) known as octets, which actually makes the conversion between decimal and binary simpler because the numbers are smaller. However, the conversion process is still the same and the two primary methods of converting binary (base 2) to decimal (base 10) are:
-1. Add Powers of 2
-2. Multiply By 2 and Add""")
+1.1. Add Powers of 2
+1.2. Multiply By 2 and Add""")
 
         binStr = format(self.totalAddresses, "032b")
 
-        # Method 1: Add Powers of 2
+        # Method 1.1: Add Powers of 2
         self._show_method_add_powers_of_2(binStr)
 
-        # Method 2: Multiply By 2 and Add
+        # Method 1.2: Multiply By 2 and Add
         self._show_method_multiply_by_2_and_add(binStr)
 
     def _show_method_add_powers_of_2(self, binStr):
         totalAddressesBin = IPv4Address._space_out_binary_string(format(self.broadcastInt - self.netAdrInt + 1, '032b'))
         digits = len(totalAddressesBin.replace(" ","")) - 1
         print(f"""
-Method 1: Add Powers of 2
+Method 1.1: Add Powers of 2
 
 This is essentially the reverse of method 1 for converting decimal to binary, this should be familiar. The big difference is that the total addresses could be 4,294,967,296 if the prefix length was 0. As such, you will need a much bigger base 10 equivalent for the powers of 2 if you have a small prefix. Here is a cheat sheet:
 
@@ -1108,7 +1172,7 @@ Which simplifies too:
 
         assert num == num2 and num == self.totalAddresses
 
-    def _method_host_bits_exponent_total_hosts(self):
+    def _method_host_bits_exponent_total_addresses(self):
         print(f"""
 Method 2: Raise 2 to the host bits power.
 
@@ -1117,14 +1181,15 @@ To get the number of host bits using the subnet mask in binary format, count the
 # of 0s = {self.netmaskBin.count("0")}
 host bits = {self.netmaskBin.count("0")}
 
-The other method involves subtracting the CIDR prefix length (/{self.prefixLen}) prefix length from 32.
+The other method involves subtracting the CIDR prefix length (/{self.prefixLen}) from 32.
 32 - {self.prefixLen} = {32 - self.prefixLen}
 host bits = {32 - self.prefixLen}
 
 Now raise 2 to the power of {32 - self.prefixLen} (# of host bits) to get the total addresses:
-2^{32 - self.prefixLen} = {2**(32 - self.prefixLen):,d}
-
-If desired, you can estimate the total number of hosts using the number of host bits:
+2^{32 - self.prefixLen} = {2**(32 - self.prefixLen):,d}""")
+        if self.totalAddresses > 512:
+            print(f"""
+If desired, you can estimate the total number of addresses using the number of host bits:
 
 Total addresses = 2^{32 - self.prefixLen}
 
@@ -1147,7 +1212,7 @@ For the complete explanation, see the block size section.""")
         oneIndex = binStr.index('1')
 
         print(f"""
-Method 2: Multiply By 2 and Add
+Method 1.2: Multiply By 2 and Add
 
 The first method could be intimidating and tedious when the prefix length is unusually small. Fortunately, this method involves a formula that prevents the need to write base 10 equivalents for the powers of 2.
 
@@ -1165,7 +1230,7 @@ start = 1
 
 Then move right 1 digit, multiply the current total by 2, and add that digit to the product. Repeat this process until all binary digits have been processed.
 
-Here is the rest of the process:
+{'Here is the rest of the process:' if len(binStr) - oneIndex != 1 else 'There are no more digits, so the final value is 1'}
 """)
 
         num = 1
@@ -1307,20 +1372,23 @@ Applying the host bits method to the interesting octet keeps the math simple and
         # Note: this sets octetNum and blockSize in self for future function calls
         self._show_block_size_calc()
 
-        # Step 2: Host mask
+        # Step 2: Convert CIDR prefix to subnet mask and vice versa
+        self._show_cidr_to_mask_and_vice_versa()
+
+        # Step 3: Host mask
         self._show_hostmask_calc_block_method()
 
-        # Step 3: Calculate the network address for the IP address
+        # Step 4: Calculate the network address for the IP address
         self._show_calculate_network_address()
 
-        # Step 4: Broadcast Address
+        # Step 5: Broadcast Address
         self._show_broadcast_calc_block_method()
 
-        # Step 5: First and Last Usable Hosts
+        # Step 6: First and Last Usable Hosts
         self._show_first_last_host_calc_block_method()
 
-        # Step 6: Total Addresses and Total Usable Hosts
-        self._show_calc_total_hosts_block_method()
+        # Step 7: Total Addresses and Total Usable Hosts
+        self._show_calc_total_addresses_block_method()
 
     def _show_block_size_calc(self):
         print("""
@@ -1456,7 +1524,7 @@ For {self.ipAdrCIDR}, the prefix is {self.prefixLen}.""")
 
         networkBits = self.prefixLen
         octetNum = 1
-        toPrint = f"{networkBits}  "
+        toPrint = ""
 
 
         if networkBits < 8:
@@ -1491,9 +1559,119 @@ The above math was chosen since it is simpler to understand.""")
         assert hostBits == 8 - self.prefixLen % 8
         assert networkBits == self.prefixLen % 8
 
+    def _show_cidr_to_mask_and_vice_versa(self):
+        bitsToDecimal = {
+            "0": "0",
+            "1": "128",
+            "2": "192",
+            "3": "224",
+            "4": "240",
+            "5": "248",
+            "6": "252",
+            "7": "254",
+            "8": "255",
+        }
+
+        decimalToBits = {
+            "0": "0",
+            "128": "1",
+            "192": "2",
+            "224": "3",
+            "240": "4",
+            "248": "5",
+            "252": "6",
+            "254": "7",
+            "255": "8",
+        }
+
+        bitGroups = []
+        decimalGroups = self.netmaskStr.split('.')
+        num = self.prefixLen
+        mathStr = f"{num}"
+        while num > 0:
+            if num >= 8:
+                bitGroups.append("8")
+                num -= 8
+                mathStr += " - 8"
+            else:
+                bitGroups.append(str(num))
+                mathStr += f" - {num}"
+                num = 0
+        
+        while len(bitGroups) < 4:
+            bitGroups.append("0")
+
+        mathStr += f" = 0\nGroups = {', '.join(bitGroups)}"
+        
+
+        print(f"""
+Step 2: Convert CIDR prefix length to subnet mask and vice versa
+
+Having the subnet mask in dotted-decimal format is necessary for some calculations when using the block size method. Representing the subnet mask as a prefix length can also be helpful, as it enables other calculation methods, though it's not strictly required for the block size method.
+
+To convert between CIDR prefix length and subnet mask, a reference table is useful. In the binary method, this wasn't necessary because you went straight to binary before calculating the value you didn't have. In the block size method, you often need the subnet mask and may want the prefix length early on, so having both values available beforehand is helpful.
+
+Subnet Mask / CIDR Prefix Length Lookup Table
+Decimal Value (Octet) -> Number of Leading 1 Bits (Prefix Length)
+  0 -> 0
+128 -> 1
+192 -> 2
+224 -> 3
+240 -> 4
+248 -> 5
+252 -> 6
+254 -> 7
+255 -> 8
+
+For reference, each value corresponds to the number of leading '1' bits in the octet's binary representation:
+  0 = 00000000 -> 0 ones
+128 = 10000000 -> 1 one
+192 = 11000000 -> 2 ones
+224 = 11100000 -> 3 ones
+240 = 11110000 -> 4 ones
+248 = 11111000 -> 5 ones
+252 = 11111100 -> 6 ones
+254 = 11111110 -> 7 ones
+255 = 11111111 -> 8 ones
+
+Using the reference table, convert the CIDR prefix length to the subnet mask in dotted-decimal format.
+
+To convert a prefix length to dotted-decimal format, think of the prefix length as a total number of 1s to distribute across four octets. Each octet can hold a maximum of 8. Start with the first octet. If the remaining value is 8 or more, assign 8 to this octet and subtract 8 from the remaining value. Then move to the next octet and repeat the same process.
+
+Continue this for each octet in order. When the remaining value is less than 8, assign that remaining value to the current octet. Any octets left after the remaining value reaches 0 are assigned 0.
+              
+For {self.ipAdrCIDR}, the prefix length is {self.prefixLen}. 
+
+{mathStr}
+
+Next, convert each value in the group using the Subnet Mask/CIDR Prefix Length Lookup Table:""")
+        for i in bitGroups:
+            print(f"{i} -> {bitsToDecimal[i]}")
+
+        print(f"""Finally, combine the values, in order, to get the subnet mask:
+
+Subnet Mask: {'.'.join(bitsToDecimal[i] for i in bitGroups)}
+
+Converting from the subnet mask back to the prefix length works in the same way, just in reverse. Take the subnet mask {self.netmaskStr} and split it into four octets:
+
+{', '.join(self.netmaskStr.split('.'))}
+
+Use the lookup table to convert each octet to its corresponding prefix length:""")
+        
+        for i in decimalGroups:
+            print(f"{i} -> {decimalToBits[i]}")
+
+        print(f"""
+Add the values together to get the prefix length:
+
+Prefix Length: {' + '.join(decimalToBits[i] for i in decimalGroups)} = {sum(int(decimalToBits[i]) for i in decimalGroups)}""")
+        
+        assert '.'.join(bitsToDecimal[i] for i in bitGroups) == self.netmaskStr
+        assert sum(int(decimalToBits[i]) for i in decimalGroups) == self.prefixLen
+
     def _show_hostmask_calc_block_method(self):
         print("""
-Step 2: Calculate the host mask
+Step 3: Calculate the host mask
 
 Since the host mask is the inverse of the subnet mask there are two methods for calculating it:
 1. Using the subnet mask (in dotted decimal notation)
@@ -1562,7 +1740,7 @@ Octet {4 - len(groups) + j + 1} = {2**i - 1}""")
 
     def _show_calculate_network_address(self):
         print(f"""
-Step 3: Calculate the network address that contains the IP address {self.ipAdrCIDR}
+Step 4: Calculate the network address that contains the IP address {self.ipAdrCIDR}
 
 The network address is the closest multiple of the block size that does not exceed the IP address in the subnetted octet. There are three methods to calculate the network address:
 1. Compute subnets until the desired one is found (works great for large block sizes)
@@ -1600,7 +1778,7 @@ The network address is the closest multiple of the block size that does not exce
 
 With the block size of {self.blockSize} and the interesting octet #{self.octetNum}, you can now calculate the network address. Since this is not binary math, there will be some inefficiencies since there is no straight forward method of calculating the network needed, but the primary benefit of not having to convert to and from binary makes this a viable option.
 
-This involves up to two steps. The first is setting the interesting octet {self.octetNum} to 0. The second is setting the octets with only host bits to 0 (everything to the right of the interesting octet). For {self.ipStr}, the octets with only host bits are {hostOctets}.
+This involves up to two steps. The first is setting the value of the interesting octet {self.octetNum} to 0. The second is setting the octets with only host bits to 0 (everything to the right of the interesting octet). For {self.ipStr}, the octets with only host bits are {hostOctets}.
 
 {self.ipStr} -> {strippedIP}
 """)
@@ -1785,7 +1963,7 @@ With the Network address value calculated for the interesting octet (#{self.octe
             updatedIP += f".{hostOctets}"
 
         print(f"""
-Step 4: Calculate the broadcast address
+Step 5: Calculate the broadcast address
 
 With the network address ({self.netAdrStr}/{self.prefixLen}) and block size ({self.blockSize}) known, the next step is to calculate the broadcast address.""")
 
@@ -1830,7 +2008,7 @@ Broadcast address = {broadcast}""")
         assert broadcast == self.broadcastStr
 
     def _show_first_last_host_calc_block_method(self):
-        print("\nStep 5: Calculate the first and last usable hosts")
+        print("\nStep 6: Calculate the first and last usable hosts")
 
         if self.prefixLen >= 31:
             firstHost = self.netAdrStr
@@ -1843,7 +2021,7 @@ Broadcast address = {broadcast}""")
 
         if self.prefixLen == 31:
             print(f"""
-Since according to RFC3021 this is a point-to-point link (/31), the network address is the first host and the broadcast address is the last host.
+Since according to RFC 3021 this is a point-to-point link (/31), the network address is the first host and the broadcast address is the last host.
 
 Network address: {self.netAdrStr}
      First Host: {firstHost}
@@ -1852,7 +2030,7 @@ Network address: {self.netAdrStr}
       Last Host: {lastHost}""")
         elif self.prefixLen == 32:
             print(f"""
-Since according to RFC4632 this is a host route (/32), the first and last host are both equal the IP address since the network size only allows a single address.
+Since according to RFC 4632 this is a host route (/32), the first and last host are both equal the IP address since the network size only allows a single address.
 
 IP Address: {self.ipStr}
 First Host: {firstHost}
@@ -1867,9 +2045,9 @@ Last host = {self.broadcastStr} - 1 = {lastHost}""")
         assert firstHost == self.firstHost
         assert lastHost == self.lastHost
 
-    def _show_calc_total_hosts_block_method(self):
+    def _show_calc_total_addresses_block_method(self):
         print(f"""
-Step 6: Calculate the total addresses and total usable hosts
+Step 7: Calculate the total addresses and total usable hosts
 
 There are two methods to calculate the total addresses within a network:
 1. Compute the total addresses using the block size
@@ -1879,10 +2057,10 @@ Afterwards, calculating the usable hosts is quite simple
 """)
 
         # Method 1: compute total addresses using the block size
-        self._method_get_total_hosts_with_block_size()
+        self._method_get_total_addresses_with_block_size()
 
         # Method 2: compute total addresses using the prefix length
-        self._method_get_total_hosts_with_prefix_length()
+        self._method_get_total_addresses_with_prefix_length()
 
         if self.prefixLen == 31 or self.prefixLen == 32:
             message = f"applies and the total usable hosts are {self.totalAddresses}."
@@ -1907,7 +2085,7 @@ Since this is a /{self.prefixLen}, this {message}""")
                 taken += 1
         return taken
 
-    def _method_get_total_hosts_with_block_size(self):
+    def _method_get_total_addresses_with_block_size(self):
         numHostOctets = (32 - self.prefixLen) // 8
         if self.prefixLen % 8 == 0: # /0, /8, /16, /24
             numHostOctets -= 1
@@ -2079,7 +2257,7 @@ For the network {self.netAdrStr}/{self.prefixLen}, with a block size of {self.bl
 
         assert self.blockSize * 256**numHostOctets == self.totalAddresses
 
-    def _method_get_total_hosts_with_prefix_length(self):
+    def _method_get_total_addresses_with_prefix_length(self):
         print(f"""
 Method 2: compute the total addresses using the prefix length
 

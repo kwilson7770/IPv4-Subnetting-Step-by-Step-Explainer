@@ -74,7 +74,7 @@ class SubnetGUI:
         self.inputVariable.trace_add("write", lambda *_: self.update())
 
         self.entry = ttk.Entry(top, textvariable=self.inputVariable, font=("Segoe UI", 10))
-        self.entry.grid(row=1, column=0, padx=(0, 10), sticky="w")
+        self.entry.grid(row=1, column=0, padx=(0, 10), sticky="ew")
 
         ttk.Label(top, text="Prefix").grid(row=1, column=1, sticky="w", padx=(0, 3))
         ttk.Label(top, text="Subnet").grid(row=2, column=1, sticky="w", padx=(0, 3))
@@ -518,7 +518,7 @@ class SubnetGUI:
                 for row in self.table.get_children():
                     writer.writerow(self.table.item(row)["values"])
 
-            self.setStatus("green", "Export successful")
+            self.setStatus("green", f"Saved subnet data to {filePath}")
             print(f"Saved subnet data to {filePath}")
         except Exception as ex:
             self.setStatus("red", "Export failed", 5)

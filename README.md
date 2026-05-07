@@ -434,10 +434,10 @@ Note: These checks are primarily intended for development and debugging.
 Below is the output when running `python cli.py 172.30.197.10/19`
 
 ```text
-IPv4 Address:                    172.30.197.10
-Subnet Mask:                     255.255.224.0
-Host Mask (Inverse Subnet Mask): 0.0.31.255
-Prefix Length:                   19
+IPv4 Address:  172.30.197.10
+Subnet Mask:   255.255.224.0
+Host Mask:     0.0.31.255
+Prefix Length: 19
 
 Network address:   172.30.192.0
 Broadcast Address: 172.30.223.255
@@ -453,14 +453,14 @@ Network Address (CIDR): 172.30.192.0/19
 Binary (IPv4 Address):      10101100 00011110 11000101 00001010
 Binary (Subnet Mask):       11111111 11111111 11100000 00000000
 Binary (Host Mask):         00000000 00000000 00011111 11111111
-Binary (Network address):   10101100 00011110 11000000 00000000
+Binary (Network Address):   10101100 00011110 11000000 00000000
 Binary (Broadcast Address): 10101100 00011110 11011111 11111111
 
-Address Class (Historical):                       Class B
-Private Address, Non-Publicly Routable (RFC1918): True
-Link-Local Address, Non-Routable (RFC3927):       False
-Multicast:                                        False
-Loopback:                                         False
+Address Class (Historical):                        Class B
+Private Address, Non-Publicly Routable (RFC 1918): True
+Link-Local Address, Non-Routable (RFC 3927):       False
+Multicast:                                         False
+Loopback:                                          False
 ```
 
 ---
@@ -477,6 +477,9 @@ IP Address
 
 Subnet Mask
 255.255.224.0 -> 255, 255, 224, 0 -> 11111111 11111111 11100000 00000000
+
+CIDR Prefix Length (from binary subnet mask)
+11111111 11111111 11100000 00000000 -> 19 1s -> /19
 
 CIDR Prefix Length -> Subnet Mask (binary)
 172.30.197.10/19 -> 19 -> 11111111 11111111 111 -> 11111111 11111111 11100000 00000000
@@ -518,8 +521,8 @@ Network address: - 10101100 00011110 11000000 00000000
                    -----------------------------------
 Total Addresses:   00000000 00000000 00100000 00000000
 
-IP Address
-172.30.197.10
+IP Address (CIDR notation)
+172.30.197.10/19
 
 Subnet Mask
 11111111 11111111 11100000 00000000 -> 255.255.224.0
@@ -543,12 +546,21 @@ Total Addresses
 00000000 00000000 00100000 00000000 -> 8,192
 
 Usable Hosts
-8192 - 2 = 8,190
+8,192 - 2 = 8,190
 
 Block size steps for 172.30.197.10/19
 
 Block Size
 172.30.197.10/19 -> 19 -> 5 host bits in octet 3 (the interesting octet) -> block size = 2^5 = 32
+
+Subnet Mask/CIDR Prefix Length Lookup Table
+128=1, 192=2, 224=3, 240=4, 248=5, 252=6, 254=7, 255=8
+
+CIDR Prefix Length -> Subnet Mask
+172.30.197.10/19 -> /19 -> 8, 8, 3, 0 -> 255, 255, 224, 0 -> 255.255.224.0
+
+Subnet Mask to CIDR Prefix Length
+255.255.224.0 -> 255, 255, 224, 0 -> 8 + 8 + 3 + 0 = 19 -> /19
 
 Host Mask
 All ones:      255.255.255.255
@@ -561,7 +573,7 @@ Octet 3 value for network address = 197 // 32 * 32 -> 192
 Octet 3 value set to 192 and all octets to the right of it set to 0 -> 172.30.192.0
 
 Broadcast Address
-Add 32 to octet 3 in 172.30.192.0 and subtract 1 = 223. Then replace octets to the right of the interesting octet with 255 -> 172.30.223.255
+Add 32 (block size) to octet 3 in 172.30.192.0 and subtract 1 = 223. Then replace octets to the right of the interesting octet with 255 -> 172.30.223.255
 
 First Host
 172.30.192.0 + 1 = 172.30.192.1
@@ -585,7 +597,17 @@ Below are small snippets of output when running `python cli.py 172.30.197.10/19 
 ```text
 Step 2: Convert the subnet mask to binary.
 
-If this is in dotted-decimal notation already (255.255.224.0) then repeat everything in step 1. If the subnet mask was provided as a prefix length (19) from CIDR notation (172.30.197.10/19) then simply write out 19 '1's (prefix length) and 13 '0's (32 - 19 = 13).
+If this is in dotted-decimal notation already (255.255.224.0) then repeat everything in step 1. Here is a compact version of method 1 from step 1:
+
+Subtract Powers of 2 (compact)
+...
+Now combine each binary octet (in the original order of the IPv4 octets):
+11111111 11111111 11100000 00000000 == 255.255.224.0
+
+To calculate the CIDR Prefix Length from the binary subnet mask, count the number of 1s to get the prefix length.
+11111111 11111111 11100000 00000000 -> 19 1s -> /19
+
+If the IP address is in CIDR notation (172.30.197.10/19) then simply write out 19 '1's (prefix length) and 13 '0's (32 - 19 = 13).
 11111111 11111111 11100000 00000000
 
 Step 4: Calculate the network address using the IP address and subnet mask.
@@ -601,7 +623,7 @@ Method 1: compute the total number of addresses using the block size
 
 This method uses the block size and multiplies it by 256 for each octet that consists entirely of host bits in the network address.
 
-For prefixes that fall on an octet boundary (/8, /16, /24), the "interesting octet" is treated as a full host octet, since its block size is 256.
+For prefixes that fall on an octet boundary (/0, /8, /16, /24), the "interesting octet" is treated as a full host octet, since its block size is 256.
 
 For example:
 
