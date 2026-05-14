@@ -442,10 +442,10 @@ Prefix Length: 19
 Network address:   172.30.192.0
 Broadcast Address: 172.30.223.255
 
-First Host:      172.30.192.1
-Last Host:       172.30.223.254
-Total Addresses: 8,192
-Usable Hosts:    8,190
+First Host:            172.30.192.1
+Last Host:             172.30.223.254
+Total Addresses:       8,192
+Usable Host Addresses: 8,190
 
 IP Address (CIDR):      172.30.197.10/19
 Network Address (CIDR): 172.30.192.0/19
@@ -545,46 +545,48 @@ Last Host
 Total Addresses
 00000000 00000000 00100000 00000000 -> 8,192
 
-Usable Hosts
+Usable Host Addresses
 8,192 - 2 = 8,190
 
 Block size steps for 172.30.197.10/19
 
 Block Size
-172.30.197.10/19 -> 19 -> 5 host bits in octet 3 (the interesting octet) -> block size = 2^5 = 32
+255.255.224.0 -> interesting octet 3's value = 224 -> block size = 256 - 224 = 32
+172.30.197.10/19 -> 19 -> /8, /8, /3, /0 -> /3 (interesting octet = 3) -> 8 - 3 = 5 host bits -> block size = 2^5 = 32
 
 Subnet Mask/CIDR Prefix Length Lookup Table
 128=1, 192=2, 224=3, 240=4, 248=5, 252=6, 254=7, 255=8
 
 CIDR Prefix Length -> Subnet Mask
-172.30.197.10/19 -> /19 -> 8, 8, 3, 0 -> 255, 255, 224, 0 -> 255.255.224.0
+172.30.197.10/19 -> /19 -> /8, /8, /3, /0 -> 255, 255, 224, 0 -> 255.255.224.0
 
 Subnet Mask to CIDR Prefix Length
 255.255.224.0 -> 255, 255, 224, 0 -> 8 + 8 + 3 + 0 = 19 -> /19
 
 Host Mask
-All ones:      255.255.255.255
+   All ones:   255.255.255.255
 Subnet mask: - 255.255.224.0
                ---------------
-Host mask:     0.0.31.255
+  Host mask:   0.0.31.255
 
-Network address
-Octet 3 value for network address = 197 // 32 * 32 -> 192
-Octet 3 value set to 192 and all octets to the right of it set to 0 -> 172.30.192.0
+Network Address
+Interesting octet 3 = 197, block size = 32 -> 197 // 32 * 32 -> 192
+Right of octet 3 set to 0 -> 172.30.192.0
 
 Broadcast Address
-Add 32 (block size) to octet 3 in 172.30.192.0 and subtract 1 = 223. Then replace octets to the right of the interesting octet with 255 -> 172.30.223.255
+Interesting octet 3 = 192, block size = 32 -> 192 + 32 - 1 -> 223
+Right of octet 3 set to 255 -> 172.30.223.255
 
 First Host
-172.30.192.0 + 1 = 172.30.192.1
+172.30.192.0 + 1 -> 172.30.192.1
 
 Last Host
-172.30.223.255 - 1 = 172.30.223.254
+172.30.223.255 - 1 -> 172.30.223.254
 
 Total Addresses
 172.30.197.10/19 -> 19 -> 32 - 19 = 13 -> 2^13 = 8,192 total addresses
 
-Usable Hosts
+Usable Host Addresses
 8,192 - 2 = 8,190
 ```
 
@@ -619,41 +621,43 @@ This is done using a binary operation called bitwise AND (&). If both bits equal
                    -----------------------------------
 Network address:   10101100 00011110 11000000 00000000
 
-Method 1: compute the total number of addresses using the block size
+Method 1: Calculate the total addresses using the block size
 
-This method uses the block size and multiplies it by 256 for each octet that consists entirely of host bits in the network address.
+This method calculates the total number of addresses by starting with the block size of the interesting octet and multiplying by 256 for each octet that contains only host bits. Since the interesting octet is the first octet that contains host bits, the block size is calculated within that octet.
 
-For prefixes that fall on an octet boundary (/0, /8, /16, /24), the "interesting octet" is treated as a full host octet, since its block size is 256.
+Each remaining octet that consists entirely of host bits contributes a factor of 256. For prefixes that fall on an octet boundary (/0, /8, /16, /24), there is no partially used octet, so the next octet is treated as the interesting octet. Any remaining host-only octets then contribute factors of 256.
 
-For example:
+Examples
 
-If the network address is 1.0.0.0/8 and the block size is 256 then the last 3 octets are entirely host bits.
+If the network address is 1.0.0.0/8 and the block size is 256, then the last 2 octets are entirely host bits.
 256 * 256 * 256 = 16,777,216 = total addresses
 
-For the network 172.30.192.0/19, with a block size of 32, the last octet is entirely host bits (0).
+If the network address is 10.128.0.0/9 and the block size is 128, then the last 2 octets are entirely host bits.
+128 * 256 * 256 = 8,388,608 = total addresses
+
+For the network 172.30.192.0/19, with a block size of 32, the last octet is entirely host bits.
 32 * 256 = 8,192 = total addresses
 
-If you need to estimate the total number of hosts and don't require an exact value, you can use this block-based method instead of working with exponents. The prefix-length method is usually simpler for quick estimates, but this provides an alternative way to approach the problem.
+Estimating Large Subnet Sizes
 
-This method works directly with the factors that make up the subnet size. Since subnet sizes are powers of 2, they can always be broken down into factors of 2. These factors can then be rearranged to form numbers that are easier to work with mentally.
+When an exact value is not required, the block-size method can also be used to estimate large subnet sizes. This method works directly with the factors that make up the total number of addresses. Since the number of addresses is always a power of 2, it can be broken down into factors of 2 and rearranged into values that are easier to estimate.
 
-Each octet that is entirely host bits contributes a factor of 256. Since 256 * 4 = 1024 (which is close to 1000), the idea is to take two factors of 2 from elsewhere in the expression and combine them with each 256 to turn it into approximately 1000. In other words, each 256 needs two additional factors of 2 to become about 1000.
+Specifically, group factors into sets of 2^10, since 2^10 = 1024. Each group can then be approximated as 1000 to produce a quick estimate.
 
-Note: rearranging factors does not change the value. The change comes from rounding 1024 down to 1000.
+For the network 172.30.192.0/19, with a block size of 32, the last 1 octet consist entirely of host bits:
+32 * 256
 
-For example, to estimate the number of address for the network 10.0.0.0/10, with a block size of 64, the last 2 octets are entirely host bits (0.0.0):
-64 * 256 * 256
+32 = 2 * 2 * 2 * 2 * 2
 
-64 = 2 * 2 * 2 * 2 * 2 * 2
+Take 2 factors of 2 (all from 32) and apply them to 1 256 term to form as many 1024 groups as possible:
 
-Take 4 factors of 2 (all from 64) and move them to the 2 256 terms:
+256 * 2 * 2 = 1024 or approximately 1000
 
-256 * 2 * 2 = 1024 or approx. 1000
-256 * 2 * 2 = 1024 or approx. 1000
+Remaining factors:
+32 / (2 * 2) = 8
 
-Remaining:
-64 / (2 * 2 * 2 * 2) = 4
+Approximate address count:
+8 * 1000 = 8,000 addresses
 
-Final estimate:
-4 * 1000 * 1000 = 4,000,000
+Note: the prefix-length method is usually simpler for quick estimates, but this block-size method provides an alternative approach to the problem.
 ```
