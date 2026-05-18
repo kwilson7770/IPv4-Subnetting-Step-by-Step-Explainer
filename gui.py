@@ -7,19 +7,19 @@ from IPv4Address import IPv4Address
 
 class SubnetGUI:
     """
-    Tkinter-based IPv4 subnetting visualization tool.
+Tkinter-based IPv4 subnetting visualization tool.
 
-    Structure:
-    - Input section (IP entry + sliders)
-    - Address details panel (auto-bound to IPv4Address properties)
-    - Subnet table (Treeview)
-    - Theme + export controls
+Interface structure:
+- Input section for IPv4 address entry and prefix controls
+- Address details panel bound to IPv4Address properties
+- Subnet table displayed with a Treeview widget
+- Theme and export controls
 
-    Core behavior:
-    - Parses input into IPv4Address object
-    - Updates UI reactively on input change
-    - Supports subnetting and supernetting via sliders
-    """
+Core behavior:
+- Parses user input into an IPv4Address object
+- Updates the interface automatically when input changes
+- Supports subnetting and supernetting through slider controls
+"""
 
     def __init__(self, root):
         self.root = root
@@ -32,7 +32,7 @@ class SubnetGUI:
         self._build_layout()
         self.setupTheme()
 
-        # default value
+        # Set default IPv4 address input
         self.inputVariable.set("10.0.0.1/8")
         self.entry.focus()
 
@@ -46,14 +46,14 @@ class SubnetGUI:
         self.mode = "Classless"
 
     def _build_layout(self):
-        self.root.rowconfigure(0, weight=1) # have root expand vertically to fill out window
-        self.root.columnconfigure(0, weight=1) # have root expand horizontally to fill out window
+        self.root.rowconfigure(0, weight=1) # Allow the root window to expand vertically
+        self.root.columnconfigure(0, weight=1) # Allow the root window to expand horizontally
 
         self.main = ttk.Frame(self.root, padding=10)
         self.main.grid(row=0, column=0, sticky="nsew")
 
-        self.main.rowconfigure(3, weight=1) # have the table row expand vertically to take the remaining space
-        self.main.columnconfigure(0, weight=1) # have main expand horizontally to fill out window
+        self.main.rowconfigure(3, weight=1) # Allow the subnet table row to expand vertically
+        self.main.columnconfigure(0, weight=1) # Allow the main frame to expand horizontally
 
         self._create_input_section()
         self._create_info_panel()
@@ -64,13 +64,13 @@ class SubnetGUI:
     def _create_input_section(self):
         top = ttk.Frame(self.main)
         top.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        top.columnconfigure(2, weight=1) # have sliders expand horizontally to take the remaining space
+        top.columnconfigure(2, weight=1) # Allow the slider column to expand horizontally
 
         ttk.Label(top, text="IP Address / Subnet", style="Header.TLabel").grid(row=0, column=0, sticky="w")
 
         self.inputVariable = tk.StringVar()
 
-        # Trigger update() whenever input text changes
+        # Update the interface whenever the input text changes
         self.inputVariable.trace_add("write", lambda *_: self.update())
 
         self.entry = ttk.Entry(top, textvariable=self.inputVariable, font=("Segoe UI", 10))
@@ -101,15 +101,15 @@ class SubnetGUI:
 
         fields = [
             "ipStr", "ipAdrCIDR", "ipBin",
-            "netmaskStr", "netAdrCIDR", "netmaskBin",
+            "subnetMaskStr", "netAdrCIDR", "subnetMaskBin",
             "hostmaskStr", "ipInt", "hostmaskBin",
-            "prefixLen", "netmaskInt", "netAdrBin",
+            "prefixLen", "subnetMaskInt", "netAdrBin",
             "netAdrStr", "hostmaskInt", "broadcastBin",
             "broadcastStr", "netAdrInt", "reserved",
             "firstHost", "broadcastInt", "loopback",
             "lastHost", "privateUse", "limitedBroadcast",
             "totalAddresses", "linkLocal", "adrClassStr",
-            "usableHosts", "multicast",
+            "usableHostAddresses", "multicast",
         ]
 
         fieldLabels = [
@@ -117,15 +117,15 @@ class SubnetGUI:
             "Subnet Mask", "Network Address CIDR", "Subnet Mask Binary",
             "Host Mask", "IP Address Int", "Host Mask Binary",
             "Prefix Length", "Subnet Mask Int", "Network Address Binary",
-            "Network Address", "Host Mask Int", "Broadcast Binary",
-            "Broadcast", "Network Address Int", "Reserved Address",
-            "First Host", "Broadcast Int", "Loopback",
-            "Last Host", "Private Use", "Limited Broadcast",
+            "Network Address", "Host Mask Int", "Broadcast Address Binary",
+            "Broadcast Address", "Network Address Int", "Reserved Address",
+            "First Host Address", "Broadcast Address Int", "Loopback",
+            "Last Host Address", "Private Use", "Limited Broadcast",
             "Total Addresses", "Link Local", "Legacy Class",
-            "Total Usable Hosts", "Multicast",
+            "Usable Host Addresses", "Multicast",
         ]
 
-        # Dynamically adds labels under Address Details section
+        # Dynamically create labels for the Address Details section
         for i, field in enumerate(fields):
             ttk.Label(info, text=fieldLabels[i] + ":").grid(row=i // 3, column=(i % 3) * 2, sticky="e", padx=5, pady=2)
             label = ttk.Label(info, text="")
@@ -140,15 +140,15 @@ class SubnetGUI:
         self.tableFrame = ttk.LabelFrame(self.main, text="Subnets", style="Header.TLabelframe")
         self.tableFrame.grid(row=3, column=0, sticky="nsew")
 
-        self.tableFrame.rowconfigure(0, weight=1) # have subnets table expand vertically to fill out window
-        self.tableFrame.columnconfigure(0, weight=1) # have subnets table expand horizontally to fill out window
+        self.tableFrame.rowconfigure(0, weight=1) # Allow the subnet table to expand vertically
+        self.tableFrame.columnconfigure(0, weight=1) # Allow the subnet table to expand horizontally
 
         columns = ("Network", "HostRange", "Broadcast")
 
         self.table = ttk.Treeview(self.tableFrame, columns=columns, show="headings", height=12)
         self.table.grid(row=0, column=0, sticky="nsew")
 
-        for col, text in (("Network", "Network Address"), ("HostRange", "Usable Host Range"), ("Broadcast", "Broadcast")):
+        for col, text in (("Network", "Network Address"), ("HostRange", "Usable Host Address Range"), ("Broadcast", "Broadcast Address")):
             self.table.heading(col, text=text, command=lambda c=col: self.sortColumn(c, True))
             self.table.column(col, anchor="center", width=180)
 
@@ -166,15 +166,15 @@ class SubnetGUI:
         self.menu = tk.Menu(self.main, tearoff=0)
         self.menu.add_command(label="Copy (Ctrl+C)", command=self.copySelection)
         self.menu.add_command(label="Select All (Ctrl+A)", command=self.selectAll)
-        # Right-click binding (Windows/Linux)
+        # Right-click binding for Windows and Linux
         self.table.bind("<Button-3>", self.showContextMenu)
-        # Right-click binding (macOS)
+        # Right-click binding for macOS
         self.table.bind("<Control-Button-1>", self.showContextMenu)
 
     def _create_bottom_controls(self):
         bottomFrame = ttk.Frame(self.main)
         bottomFrame.grid(row=4, column=0, sticky="ew", pady=(10, 0))
-        bottomFrame.columnconfigure(1, weight=1) # have buttons/status bar expand horizontally to fill out window
+        bottomFrame.columnconfigure(1, weight=1) # Allow the status bar area to expand horizontally
 
         self.themeButton = ttk.Button(bottomFrame, text="Light Mode", command=self.toggleTheme)
         self.themeButton.grid(row=0, column=0, sticky="w")
@@ -193,7 +193,7 @@ class SubnetGUI:
     def applyTheme(self):
         s = self.style
 
-        # Define color palette for dark/light themes
+        # Define color palette for dark and light themes
         if self.darkMode:
             BG = "#1E1E1E"
             FG = "#D4D4D4"
@@ -235,7 +235,7 @@ class SubnetGUI:
 
         s.map("Treeview", background=[("selected", SELECT)], foreground=[("selected", "white")])
 
-        # Table row alternating colors
+        # Configure alternating row colors for the subnet table
         if self.darkMode:
             self.table.tag_configure("even", background=PANEL)
             self.table.tag_configure("odd", background=ROW_ALT)
@@ -264,30 +264,30 @@ class SubnetGUI:
             ip = IPv4Address(address)
             self.ip = ip
 
-            # Preserve original input format when updating prefix
+            # Preserve the original input format when the prefix length changes
             self.inputFormat = self.detectFormat(address)
 
-            # Bind IPv4Address properties to UI labels dynamically
+            # Dynamically bind IPv4Address properties to interface labels
             for key in self.labels:
-                if key == "totalAddresses" or key == "usableHosts" or key.endswith("Int"):
+                if key == "totalAddresses" or key == "usableHostAddresses" or key.endswith("Int"):
                     self.labels[key].config(text=f"{getattr(ip, key):,d}")
                 else:
                     self.labels[key].config(text=str(getattr(ip, key)))
 
             self.prefixSlider.set(ip.prefixLen)
 
-            # Prevent subnet prefix from being <= current prefix
+            # Prevent subnet prefixes that are less than or equal to the current prefix
             if self.subnetSlider.get() <= ip.prefixLen:
                 self.subnetSlider.set(min(self.ip.prefixLen + 1, 32))
 
-            # If user selects invalid value (supernet size larger than or equal to current prefix), snap slider back to minimum valid prefix
+            # Prevent supernet prefixes that are greater than or equal to the current prefix by resetting the slider to the nearest valid value
             if self.supernetSlider.get() >= ip.prefixLen:
                 self.supernetSlider.set(max(self.ip.prefixLen - 1, 0))
 
             self.subnet(self.subnetSlider.get())
             self.supernet(self.supernetSlider.get())
 
-            # set theme foreground color and don't clear the message
+            # Reset the status message using the active theme colors without clearing it
             self.setStatus("", "Ready", 0)
         except Exception as ex:
             for key in self.labels:
@@ -303,22 +303,22 @@ class SubnetGUI:
 
     def detectFormat(self, address):
         """
-        Determines how the user entered the IP address.
+Determine the format used for the IPv4 address input.
 
-        Returns:
-        int: format type
-            1 = CIDR
-            2 = dotted decimal (IP only)
-            3 = dotted + netmask
-            4 = integer + prefix
-            5 = integer only
-            0 = unknown
-        """
+Returns int as input format identifier:
+1 = CIDR notation
+2 = dotted-decimal IPv4 address only
+3 = dotted-decimal IPv4 address with subnet mask
+4 = integer IPv4 address with prefix length
+5 = integer IPv4 address only
+0 = unknown format
+"""
+
         if address == f"{self.ip.ipAdrCIDR}":
             return 1
         elif address == f"{self.ip.ipStr}":
             return 2
-        elif address == f"{self.ip.ipStr} {self.ip.netmaskStr}":
+        elif address == f"{self.ip.ipStr} {self.ip.subnetMaskStr}":
             return 3
         elif address == f"{self.ip.ipInt} /{self.ip.prefixLen}":
             return 4
@@ -331,26 +331,26 @@ class SubnetGUI:
             return
 
         newPrefix = int(value)
-        if newPrefix != self.ip.prefixLen: # ensure there is a change
+        if newPrefix != self.ip.prefixLen: # Update only when the prefix length changes
             if self.inputFormat == 1:
                 self.inputVariable.set(f"{self.ip.ipStr}/{newPrefix}")
             elif self.inputFormat == 2:
-                self.inputFormat = 1 # changing the prefix changes the format
+                self.inputFormat = 1 # Changing the prefix length converts the input to CIDR notation
                 self.inputVariable.set(f"{self.ip.ipStr}/{newPrefix}")
             elif self.inputFormat == 3:
                 temp = IPv4Address(f"{self.ip.ipStr}/{newPrefix}")
-                self.inputVariable.set(f"{self.ip.ipStr} {temp.netmaskStr}")
+                self.inputVariable.set(f"{self.ip.ipStr} {temp.subnetMaskStr}")
             elif self.inputFormat == 4:
                 self.inputVariable.set(f"{self.ip.ipInt} /{newPrefix}")
             elif self.inputFormat == 5:
-                self.inputFormat = 4 # changing the prefix changes the format
+                self.inputFormat = 4 # Changing the prefix length converts the input to integer-plus-prefix format
                 self.inputVariable.set(f"{self.ip.ipInt} /{newPrefix}")
 
     def subnet(self, value):
         if not self.ip:
             return
 
-        # /32 cannot be subnetted further (host route)
+        # A /32 prefix represents a host route and cannot be subnetted further
         if self.ip.prefixLen == 32:
             self.subnetSlider.configure(state="disabled")
             self.clearTable()
@@ -359,7 +359,7 @@ class SubnetGUI:
         else:
             self.subnetSlider.configure(state="normal")
 
-        if self.inputFormat == 2 or self.inputFormat == 5: # these are always a /32 and subnetting is not possible
+        if self.inputFormat == 2 or self.inputFormat == 5: # These formats represent standalone host routes (/32)
             return
 
         newPrefix = int(value)
@@ -390,8 +390,8 @@ class SubnetGUI:
     def supernet(self, value):
         if not self.ip:
             return
-        
-        # /0 cannot be supernetted further (largest possible network)
+
+        # A /0 prefix represents the largest possible IPv4 network and cannot be supernetted further
         if self.ip.prefixLen == 0:
             self.supernetSlider.configure(state="disabled")
             self.supernetLabel.config(text="Supernet: N/A")
@@ -401,7 +401,7 @@ class SubnetGUI:
 
         newPrefix = int(value)
 
-        # Ensure supernet prefix is smaller than current prefix
+        # Ensure the supernet prefix is smaller than the current prefix
         if newPrefix >= self.ip.prefixLen:
             self.supernetSlider.set(max(self.ip.prefixLen - 1, 0))
             return
@@ -409,7 +409,7 @@ class SubnetGUI:
         if newPrefix < self.ip.prefixLen:
             self.supernetIP = IPv4Address(f"{self.ip.ipStr}/{newPrefix}")
 
-            self.supernetLabel.config(text=f"Supernet: {self.supernetIP.netAdrCIDR} | Usable Host Range: {self.supernetIP.firstHost} - {self.supernetIP.lastHost} | Broadcast: {self.supernetIP.broadcastStr}")
+            self.supernetLabel.config(text=f"Supernet Address: {self.supernetIP.netAdrCIDR} | Usable Host Address Range: {self.supernetIP.firstHost} - {self.supernetIP.lastHost} | Broadcast Address: {self.supernetIP.broadcastStr}")
 
     def sortColumn(self, col, reverse):
         data = []
@@ -421,10 +421,10 @@ class SubnetGUI:
                 ip = ip.split(" - ")[0]
             data.append((ip, k))
 
-        # Try numeric sort if possible.
+        # Attempt numeric sorting using IPv4 integer values
         try:
             data.sort(key=lambda t: IPv4Address.ip_int_from_string(t[0].split("/")[0]), reverse=reverse)
-        except: # Fallback to string sort if parsing fails.
+        except: # Fall back to string sorting if IPv4 parsing fails
             data.sort(reverse=reverse)
 
         for index, (_, k) in enumerate(data):
@@ -434,7 +434,7 @@ class SubnetGUI:
             tag = "even" if i % 2 == 0 else "odd"
             self.table.item(k, tags=(tag,))
 
-        # toggle next sort direction
+        # Toggle the sort direction for the next column selection
         self.table.heading(col, command=lambda: self.sortColumn(col, not reverse))
 
     def onToggleOctet(self):
@@ -466,7 +466,7 @@ class SubnetGUI:
         self.table.selection_set(self.table.get_children())
 
     def showContextMenu(self, event):
-        # Select row under mouse
+        # Select the row currently under the mouse pointer
         rowId = self.table.identify_row(event.y)
         if rowId:
             if rowId not in self.table.selection():
@@ -474,23 +474,22 @@ class SubnetGUI:
             self.menu.tk_popup(event.x_root, event.y_root)
 
     def setStatus(self, color, message, clearAfterSeconds=3):
-        # Defer the update to the Tkinter event loop instead of running it immediately to avoid UI glitches from forced redraws and to ensure the update is processed in the correct event loop order rather than interleaving with other pending callbacks such as clears
-        # This also handles rapid successive updates from sources like sliders or text input by allowing them to collapse into a single visible message representing only the most recent state
+        # Schedule the status update through the Tkinter event loop instead of applying it immediately.
+        # This prevents redraw timing issues and avoids older callbacks clearing newer messages.
+        # Rapid successive updates from sliders or text input collapse into a single visible status message.
 
-        # Defer the update to the Tkinter event loop instead of running it immediately to avoid UI glitches from forced redraws or from being cleared immediately if the _clear_message function is called immiately after setting the text
-        # This handles rapid updates to the label from the slider or text input and only displays the last message during the burst of function calls
         self.root.after(0, self._apply_message, color, message, clearAfterSeconds)
 
     def _apply_message(self, color, message, clearAfterSeconds):
         self.statusBar.config(text=message, foreground=color)
 
-        # cancel any previously scheduled clear so that an older message cannot clear the currently displayed message due to timing overlap in the event loop
+        # Cancel any previously scheduled clear operation so older callbacks cannot remove the current message
         if self._message_after_id:
             self.root.after_cancel(self._message_after_id)
             self._message_after_id = None
 
-        # Having the clearing label scheduled in this scheduled function call prevents the text update and clearing from happening right after each other during bursts of updates to tkinter GUI elements
-        # Note: if clearAfterSeconds <= 0, the message won't be cleared
+        # Schedule message clearing from within the deferred update to prevent immediate clearing during rapid interface updates
+        # If clearAfterSeconds <= 0, the message remains visible
         if isinstance(clearAfterSeconds, int) and clearAfterSeconds > 0:
             self._message_after_id = self.root.after(clearAfterSeconds * 1000, self._clear_message)
 
@@ -506,14 +505,14 @@ class SubnetGUI:
         filePath = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")], title="Save subnet table")
 
         if not filePath:
-            self.setStatus("red", "Export cancelled")
-            return # user canceled
+            self.setStatus("red", "Export canceled")
+            return # User canceled the export operation
 
         try:
             with open(filePath, mode="w", newline="") as f:
                 writer = csv.writer(f)
 
-                writer.writerow(["Network Address", "Usable Host Range", "Broadcast"])
+                writer.writerow(["Network Address", "Usable Host Address Range", "Broadcast Address"])
 
                 for row in self.table.get_children():
                     writer.writerow(self.table.item(row)["values"])
